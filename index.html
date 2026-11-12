@@ -26,6 +26,7 @@
   --hl-word:rgba(232,168,62,.45); --hl-sent:rgba(232,168,62,.18); --hl-para:rgba(63,201,142,.08);
   --grain-op:.05; --aurora-a:.15; --aurora-b:.10; --aurora-c:.07;
   --reader-paper:#211b13;
+  --headerH:66px;
 }
 [data-theme="light"]{
   --bg:#f2ead9; --bg2:#ece2cd; --surface:#faf4e6; --surface2:#f1e8d4; --overlay:#fffcf3;
@@ -134,6 +135,7 @@ main{max-width:980px;margin:0 auto;padding:18px 18px 130px;display:flex;flex-dir
   background:var(--reader-paper);border:1px solid var(--line);border-radius:18px;
   padding:44px 48px;box-shadow:0 18px 50px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
   animation:fadeUp .55s .2s ease both;position:relative;overflow:hidden;
+  scroll-margin-top:calc(var(--headerH,66px) + 64px);
 }
 .reader-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),var(--jade),var(--cinnabar));opacity:.75}
 #chapterHeading{font-family:'Literata',serif;font-size:24px;font-weight:600;margin-bottom:22px;line-height:1.35;color:var(--text)}
@@ -166,6 +168,43 @@ main{max-width:980px;margin:0 auto;padding:18px 18px 130px;display:flex;flex-dir
 footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .status{margin-left:auto;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .status b{color:var(--jade);font-weight:600}
+/* ---------- Progress feedback ---------- */
+.progpop{position:fixed;top:70px;left:50%;translate:-50% 0;z-index:120;width:min(360px,calc(100vw - 24px));
+  background:var(--overlay);border:1px solid var(--line2);border-radius:12px;padding:10px 12px;
+  box-shadow:0 14px 40px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:7px;
+  opacity:0;pointer-events:none;transform:translateY(-10px);transition:opacity .22s, transform .22s}
+.progpop.on{opacity:1;transform:none}
+.prog-top{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.prog-top b{flex:1;min-width:0;color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prog-pct{color:var(--amber);font-weight:700;font-variant-numeric:tabular-nums}
+.prog-track{height:6px;border-radius:99px;background:color-mix(in srgb,var(--line2) 45%, transparent);overflow:hidden}
+.prog-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--jade));transition:width .3s ease}
+.progpop.indet .prog-fill{width:34%;animation:progIndet 1.15s ease-in-out infinite}
+@keyframes progIndet{from{transform:translateX(-115%)}to{transform:translateX(345%)}}
+.mini-track{height:5px;border-radius:99px;background:color-mix(in srgb,var(--line2) 40%, transparent);overflow:hidden}
+.mini-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--jade));transition:width .3s ease}
+.book-prog{display:flex;align-items:center;gap:8px;margin-top:7px;font-size:10.5px;color:var(--muted)}
+.book-prog .mini-track{flex:1}
+.book-prog span{flex:none;font-variant-numeric:tabular-nums}
+.progress-row{position:sticky;top:calc(var(--headerH,66px) + 8px);z-index:35;
+  display:flex;gap:14px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;
+  background:color-mix(in srgb, var(--surface) 88%, transparent);
+  border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.25);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  animation:fadeUp .5s .18s ease both}
+.rprog{flex:1;min-width:130px;display:flex;flex-direction:column;gap:5px}
+.rprog .rp-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted)}
+.rprog .rp-top b{color:var(--amber);font-variant-numeric:tabular-nums}
+.list-item .mini-track{margin-top:6px}
+@media (max-width:520px){ .progress-row{gap:10px;padding:7px 10px} .rprog{min-width:104px} .progpop{top:62px} }
+/* ---------- Rename controls ---------- */
+.tree-leaf-edit{margin-left:2px;flex:none;width:24px;height:24px;border-radius:7px;border:1px solid transparent;
+  background:transparent;color:var(--faint);font-size:12px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:.15s}
+.tree-leaf-edit:hover,.tree-leaf-edit:focus-visible{color:var(--amber);background:color-mix(in srgb,var(--amber) 14%,transparent);border-color:var(--amber-dim)}
+.li-edit{flex:none;width:26px;height:26px;border-radius:7px;border:1px solid transparent;background:transparent;
+  color:var(--faint);font-size:13px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:.15s}
+.li-edit:hover{color:var(--amber);background:var(--surface);border-color:var(--line2)}
+.ch-edit{width:30px;padding:5px 0;text-align:center;flex:none}
 .eq{display:none;align-items:flex-end;gap:2px;height:14px}
 .eq.on{display:inline-flex}
 .eq i{width:3px;background:var(--amber);border-radius:2px;animation:eq .9s ease-in-out infinite}
@@ -454,6 +493,11 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 
 <div id="speechWarning" hidden>Speech synthesis is not available in this browser. Try Chrome or Edge.</div>
 
+<div id="progPop" class="progpop" aria-live="polite">
+  <div class="prog-top"><b id="progLabel">Working…</b><span class="prog-pct" id="progPct"></span></div>
+  <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+</div>
+
 <header>
   <div class="logo">📚</div>
   <div style="min-width:0">
@@ -480,6 +524,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
     <div class="chapter-row" id="chapterRow" hidden>
       <button class="btn small" id="btnPrevCh">‹ Chapter</button>
       <div class="ch-title" id="chTitle">Chapter</div>
+      <button class="btn small ch-edit" id="btnEditCh" title="Rename this chapter" aria-label="Rename this chapter">✎</button>
       <button class="btn small" id="btnNextCh">Chapter ›</button>
     </div>
     <label class="auto-row" id="autoRow">
@@ -489,6 +534,16 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
     <div class="stats-row" id="statsRow">
       <span id="timeLeft">About 0 min left</span>
       <span class="pg" id="pageInfo">Page 1 / 1</span>
+    </div>
+    <div class="progress-row" id="progressRow" hidden>
+      <div class="rprog">
+        <div class="rp-top"><span>Book progress</span><b id="bookPct">0%</b></div>
+        <div class="mini-track"><div class="mini-fill" id="bookFill"></div></div>
+      </div>
+      <div class="rprog">
+        <div class="rp-top"><span>Chapter progress</span><b id="chPct">0%</b></div>
+        <div class="mini-track"><div class="mini-fill" id="chFill"></div></div>
+      </div>
     </div>
     <div class="reader-card" id="readerCard">
       <h2 id="chapterHeading"></h2>
@@ -609,6 +664,23 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
       <div><label class="lbl" for="translateSelect">Auto-translate pages</label>
         <select id="translateSelect"></select></div>
 
+      <div id="trExtra" hidden>
+        <div><label class="lbl" for="translateStyle">Translation style</label>
+          <select id="translateStyle">
+            <option value="direct">Direct — exactly what the page says</option>
+            <option value="simple">Simple words — everyday language</option>
+            <option value="teacher">Teacher — simple words + explains idioms</option>
+          </select>
+          <p class="hint" style="margin-top:7px">Simple and Teacher break long sentences, swap hard words for plain ones, and keep names untouched — like a patient literacy teacher retelling the page, not a dictionary.</p></div>
+
+        <div style="margin-top:10px"><label class="lbl" for="translateEngine">Translation engine</label>
+          <select id="translateEngine">
+            <option value="google">Fast — Google Translate + smart clean-up</option>
+            <option value="ai">AI teacher (beta) — reads the whole page</option>
+          </select>
+          <p class="hint" style="margin-top:7px">The AI engine sends the page (with the previous paragraphs as context) to a free shared model, so it can catch idioms and keep the story straight. It is slower and may be busy; it then falls back to the fast engine automatically.</p></div>
+      </div>
+
       <div><label class="lbl" for="speechLang">Voice language</label>
         <select id="speechLang"></select>
         <p class="hint" style="margin-top:7px">Reading aloud needs a voice for the chosen language. The app picks a matching installed voice when it finds one.</p></div>
@@ -713,6 +785,20 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
       <input type="text" id="pasteTitle" placeholder="Title">
       <textarea id="pasteText" rows="9" placeholder="Paste your chapter or story here…"></textarea>
       <button class="btn primary" id="btnPasteAdd">Add &amp; read</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalEdit" hidden>
+  <div class="modal-panel">
+    <div class="modal-head"><h3 id="editModalTitle">Rename</h3><button class="x" data-rename-close aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <label class="lbl" id="editLabel" for="editInput">Name</label>
+      <input type="text" id="editInput" maxlength="200" autocomplete="off" spellcheck="false">
+      <div class="fix-head" style="justify-content:flex-end">
+        <button class="btn" data-rename-close>Cancel</button>
+        <button class="btn primary" id="btnEditSave">Save</button>
+      </div>
     </div>
   </div>
 </div>
@@ -868,6 +954,7 @@ function speechTransform(text, baseOffset = 0){
 const DEFAULTS = {
   voiceURI:"auto", speechLang:"auto", rate:1, font:"Literata", size:19,
   highlight:"sentence+word", autoScroll:true, autoTranslate:"off",
+  translateStyle:"simple", translateEngine:"google",
   autoContinue:true, webAutoContinue:true, theme:"dark",
   skipEnabled:true, skipList:DEFAULT_SKIP, pronEnabled:true,
   pronRules:DEFAULT_PRON.map(([from,to]) => ({from, to, on:true}))
@@ -901,7 +988,10 @@ function saveProgress(){
   if(!S.book) return;
   try{
     const p = JSON.parse(localStorage.getItem("upr.progress") || "{}");
-    p[S.book.id] = {ch:S.chapterIdx, page:S.pageIdx};
+    p[S.book.id] = {
+      ch:S.chapterIdx, page:S.pageIdx, pages:S.pages.length,
+      pct:Math.round(bookProgress() * 100)
+    };
     localStorage.setItem("upr.progress", JSON.stringify(p));
     localStorage.setItem("upr.lastBook", S.book.id);
   }catch(e){}
@@ -925,6 +1015,58 @@ function toast(msg, opts = {}){
 function setStatus(t){
   $("statusVal").textContent = t;
   $("eq").classList.toggle("on", t === "Reading" || t === "Testing pronunciation…");
+}
+
+/* ---------- Progress feedback (imports, downloads, translation) ---------- */
+let progToken = 0, progTimer = null, progValue = 0, progCap = 92, progHideTimer = null;
+function progressPaint(){
+  const pct = clamp(progValue, 0, 100);
+  $("progPct").textContent = Math.round(pct) + "%";
+  $("progFill").style.width = pct + "%";
+}
+function progressShow(label, pct = 4, cap = 92){
+  progToken++;
+  progValue = clamp(pct, 0, 100);
+  progCap = cap;
+  clearInterval(progTimer); clearTimeout(progHideTimer);
+  $("progLabel").textContent = label || "Working…";
+  $("progPop").classList.add("on");
+  progressPaint();
+  // Creep towards the cap so long downloads still look alive.
+  progTimer = setInterval(() => {
+    if(progValue >= progCap) return;
+    progValue = Math.min(progCap, progValue + Math.max(0.35, (progCap - progValue) * 0.05));
+    progressPaint();
+  }, 450);
+  return progToken;
+}
+function progressSet(pct, label){
+  if(pct != null) progValue = Math.max(progValue, clamp(pct, 0, 100));
+  if(label) $("progLabel").textContent = label;
+  progressPaint();
+}
+function progressEnd(label, token){
+  if(token != null && token !== progToken) return;
+  clearInterval(progTimer); progTimer = null;
+  clearTimeout(progHideTimer);
+  progValue = 100;
+  if(label) $("progLabel").textContent = label;
+  progressPaint();
+  progHideTimer = setTimeout(() => {
+    if(token != null && token !== progToken) return;
+    $("progPop").classList.remove("on");
+    setTimeout(() => {
+      if(!$("progPop").classList.contains("on")){
+        progValue = 0; $("progFill").style.width = "0%"; $("progPct").textContent = "";
+      }
+    }, 260);
+  }, 700);
+}
+function progressAbort(token){
+  if(token != null && token !== progToken) return;
+  clearInterval(progTimer); progTimer = null;
+  clearTimeout(progHideTimer);
+  $("progPop").classList.remove("on");
 }
 
 /* ---------- Text helpers ---------- */
@@ -986,10 +1128,15 @@ function renderWordsHtml(text, base){
   }
   return html + esc(text.slice(last));
 }
-const effText = p => {
+/* A paragraph is "done" for a given language + style + engine combination. */
+function trKey(){
   const code = LANG_CODES[S.settings.autoTranslate];
-  return (S.settings.autoTranslate !== "off" && p.trLang === code && p.display) ? p.display : p.text;
-};
+  if(!code) return "";
+  return code + "|" + (S.settings.translateStyle || "simple") + "|" + (S.settings.translateEngine || "google");
+}
+function effText(p){
+  return (S.settings.autoTranslate !== "off" && p.trKey === trKey() && p.display) ? p.display : p.text;
+}
 
 /* ---------- Pagination & rendering ---------- */
 function buildPages(){
@@ -1055,6 +1202,59 @@ function renderPage(){
   renderPagesList(); renderChaptersList(); updateChapterBar(); updateStats();
   if(S.settings.autoTranslate !== "off") translatePage();
 }
+function chapterProgress(){
+  if(!S.book || !S.pages.length) return 0;
+  const chars = p => (p.paras || []).reduce((a, pr) => a + (pr.text || "").length, 0);
+  let total = 0;
+  for(const p of S.pages) total += chars(p);
+  if(!total) return 0;
+  let done = 0;
+  for(let i = 0; i < S.pageIdx && i < S.pages.length; i++) done += chars(S.pages[i]);
+  const page = S.pages[S.pageIdx];
+  const u = page && page.units[pos.u];
+  if(page && u){
+    for(const pr of page.paras) if(pr.idx < u.p) done += (pr.text || "").length;
+    done += u.start || 0;
+  }
+  return clamp(done / total, 0, 1);
+}
+function bookProgress(){
+  if(!S.book || !S.book.chapters || !S.book.chapters.length) return 0;
+  let total = 0;
+  for(const c of S.book.chapters) total += (c.text || "").length;
+  if(!total) return 0;
+  let done = 0;
+  for(let i = 0; i < S.chapterIdx && i < S.book.chapters.length; i++) done += (S.book.chapters[i].text || "").length;
+  done += (S.book.chapters[S.chapterIdx].text || "").length * chapterProgress();
+  return clamp(done / total, 0, 1);
+}
+/* Percent read for a library entry, from the last saved position. */
+function savedBookPct(book){
+  if(!book || !book.chapters || !book.chapters.length) return 0;
+  if(S.book && S.book.id === book.id) return Math.round(bookProgress() * 100);
+  let pg = {};
+  try{ pg = JSON.parse(localStorage.getItem("upr.progress") || "{}")[book.id] || {}; }catch(e){}
+  if(pg.pct != null) return clamp(Math.round(pg.pct), 0, 100);
+  const total = book.chapters.reduce((a, c) => a + (c.text || "").length, 0) || 1;
+  const chIdx = clamp(pg.ch || 0, 0, book.chapters.length - 1);
+  let done = 0;
+  for(let i = 0; i < chIdx; i++) done += (book.chapters[i].text || "").length;
+  const pages = Math.max(1, pg.pages || 1);
+  done += (book.chapters[chIdx].text || "").length * clamp((pg.page || 0) / pages, 0, 1);
+  return clamp(Math.round(done / total * 100), 0, 100);
+}
+/* Percent read for one chapter of a library entry. */
+function savedChapterPct(book, i){
+  if(S.book && S.book.id === book.id) return chapterPct(i);
+  if(!book || !book.chapters || i < 0) return 0;
+  let pg = {};
+  try{ pg = JSON.parse(localStorage.getItem("upr.progress") || "{}")[book.id] || {}; }catch(e){}
+  const ch = clamp(pg.ch || 0, 0, book.chapters.length - 1);
+  if(i < ch) return 100;
+  if(i > ch) return 0;
+  const pages = Math.max(1, pg.pages || 1);
+  return clamp(Math.round(((pg.page || 0) / pages) * 100), 0, 100);
+}
 function updateStats(){
   const total = S.pages.reduce((a, p) => a + p.words, 0);
   const page = S.pages[S.pageIdx];
@@ -1062,6 +1262,12 @@ function updateStats(){
   const mins = Math.max(0, Math.round((total - done) / (165 * S.settings.rate)));
   $("timeLeft").textContent = `About ${mins} min left`;
   $("pageInfo").textContent = `Page ${S.pageIdx + 1} / ${S.pages.length || 1}`;
+  const cp = chapterProgress(), bp = bookProgress();
+  $("progressRow").hidden = !S.book;
+  $("chPct").textContent = Math.round(cp * 100) + "%";
+  $("chFill").style.width = (cp * 100).toFixed(1) + "%";
+  $("bookPct").textContent = Math.round(bp * 100) + "%";
+  $("bookFill").style.width = (bp * 100).toFixed(1) + "%";
 }
 function renderPagesList(){
   $("pagesList").innerHTML = S.pages.map((p, i) => {
@@ -1071,26 +1277,38 @@ function renderPagesList(){
       <span class="badge">${p.words} w</span></button>`;
   }).join("") || '<p class="hint">No pages yet.</p>';
 }
+function chapterPct(i){
+  if(i < S.chapterIdx) return 100;
+  if(i > S.chapterIdx) return 0;
+  return Math.round(chapterProgress() * 100);
+}
+function chapterItemHtml(c, i){
+  const pct = chapterPct(i);
+  return `<button class="list-item ${i === S.chapterIdx ? "active" : ""}" data-ch="${i}">
+    <div class="li-main">
+      <b>${esc(c.title || ("Chapter " + (i + 1)))}</b>
+      <span>${countWords(c.text || "")} words · ${pct}% read</span>
+      <div class="mini-track"><div class="mini-fill" style="width:${pct}%"></div></div>
+    </div>
+    ${i === S.chapterIdx ? '<span class="badge">NOW</span>' : (pct >= 100 ? '<span class="badge">DONE</span>' : "")}
+    <span class="li-edit" role="button" tabindex="0" data-rename-chapter="${esc(S.book.id)}" data-ch-idx="${i}" title="Rename chapter" aria-label="Rename chapter">✎</span></button>`;
+}
 function renderChaptersList(){
   const el = $("chaptersList");
   if(!S.book){ el.innerHTML = '<p class="hint">Open a book or read a web page first.</p>'; return; }
+  const chs = S.book.chapters || [];
   if(S.book.source === "web"){
-    const chs = S.book.chapters || [];
-    el.innerHTML = chs.map((c, i) =>
-      `<button class="list-item ${i === S.chapterIdx ? "active" : ""}" data-ch="${i}">
-        <div class="li-main"><b>${esc(c.title || ("Chapter " + (i + 1)))}</b><span>${countWords(c.text || "")} words</span></div>
-        ${i === S.chapterIdx ? '<span class="badge">NOW</span>' : ""}</button>`).join("")
+    el.innerHTML = chs.map((c, i) => chapterItemHtml(c, i)).join("")
       + (S.book.webPrevUrl ? `<button class="list-item" data-webnav="prev"><div class="li-main"><b>‹ Previous chapter</b><span>Load from website</span></div></button>` : "")
       + (S.book.webNextUrl ? `<button class="list-item" data-webnav="next"><div class="li-main"><b>Next chapter ›</b><span>Load from website</span></div></button>` : "");
   } else {
-    el.innerHTML = S.book.chapters.map((c, i) =>
-      `<button class="list-item ${i === S.chapterIdx ? "active" : ""}" data-ch="${i}">
-        <div class="li-main"><b>${esc(c.title)}</b><span>${countWords(c.text)} words</span></div>
-        ${i === S.chapterIdx ? '<span class="badge">NOW</span>' : ""}</button>`).join("");
+    el.innerHTML = chs.map((c, i) => chapterItemHtml(c, i)).join("");
   }
 }
 function updateChapterBar(){
   const row = $("chapterRow");
+  $("docSub").style.cursor = S.book ? "pointer" : "";
+  $("docSub").title = S.book ? "Rename this novel" : "";
   if(!S.book){ row.hidden = true; return; }
   row.hidden = false;
   if(S.book.source === "web"){
@@ -1459,6 +1677,83 @@ function addBook(title, chapters){
   library.unshift(book); saveLibrary();
   return book;
 }
+/* ---------- Rename novels & chapters ---------- */
+let renameTarget = null, renameReturnToLibrary = false;
+function openRenameBook(bookId){
+  const book = library.find(b => b.id === bookId);
+  if(!book) return;
+  renameTarget = {kind:"book", bookId};
+  $("editModalTitle").textContent = "Rename novel";
+  $("editLabel").textContent = "Novel title";
+  $("editInput").value = book.title || "";
+  openRenameModal();
+}
+function openRenameChapter(bookId, chapterIdx){
+  const book = library.find(b => b.id === bookId);
+  if(!book) return;
+  const ch = book.chapters[chapterIdx];
+  if(!ch) return;
+  renameTarget = {kind:"chapter", bookId, chapterIdx};
+  $("editModalTitle").textContent = "Rename chapter";
+  $("editLabel").textContent = "Chapter name";
+  $("editInput").value = ch.title || "";
+  openRenameModal();
+}
+function openRenameModal(){
+  renameReturnToLibrary = !$("modalLibrary").hidden;
+  closeModals();
+  openModal("modalEdit");
+  setTimeout(() => {
+    const i = $("editInput");
+    i.focus(); i.select();
+  }, 80);
+}
+function closeRenameModal(){
+  renameTarget = null;
+  const back = renameReturnToLibrary;
+  renameReturnToLibrary = false;
+  closeModals();
+  if(back){ renderLibrary(); openModal("modalLibrary"); }
+}
+function saveRename(){
+  if(!renameTarget) return;
+  const val = $("editInput").value.replace(/\s+/g, " ").trim().slice(0, 200);
+  if(!val){ toast("Type a name first."); return; }
+  const book = library.find(b => b.id === renameTarget.bookId);
+  if(!book){ closeRenameModal(); return; }
+  const t = renameTarget; renameTarget = null;
+  if(t.kind === "book"){
+    book.title = val; book.customTitle = true;
+    if(S.book && S.book.id === book.id){
+      S.book.title = val;
+      $("docSub").textContent = val;
+    }
+  } else {
+    const ch = book.chapters[t.chapterIdx];
+    if(!ch){ closeRenameModal(); return; }
+    ch.title = val; ch.customTitle = true;
+    // Keep bookmarks pointing at the renamed chapter in sync.
+    let bmChanged = false;
+    bookmarks.forEach(bm => {
+      if(bm.bookId !== book.id) return;
+      if(bm.ch === t.chapterIdx || (bm.source === "web" && ch.url && sameUrl(bm.url, ch.url))){
+        bm.chTitle = val; bmChanged = true;
+      }
+    });
+    if(bmChanged) saveBookmarks();
+    if(S.book && S.book.id === book.id && t.chapterIdx === S.chapterIdx){
+      $("chapterHeading").textContent = val;
+      updateChapterBar();
+      renderChaptersList();
+    }
+  }
+  saveLibrary();
+  const back = renameReturnToLibrary;
+  renameReturnToLibrary = false;
+  closeModals();
+  if(back){ renderLibrary(); openModal("modalLibrary"); }
+  toast(`Renamed to “${val}”.`);
+}
 /* Only merge pages that share a chapter-style novel URL, e.g. /novel/x/chapter-12. */
 function webNovelKey(url){
   try{
@@ -1540,7 +1835,10 @@ function persistWebBook(book, keepId){
   if(idx < 0 && chapter.url) idx = existing.chapters.findIndex(c => !c.url && c.title === chapter.title);
   if(idx >= 0){
     const old = existing.chapters[idx];
-    existing.chapters[idx] = Object.assign({}, old, chapter, {url: chapter.url || old.url});
+    const merged = Object.assign({}, old, chapter, {url: chapter.url || old.url});
+    // Keep a name the reader edited by hand.
+    if(old.customTitle && old.title) merged.title = old.title;
+    existing.chapters[idx] = merged;
   } else {
     existing.chapters.push(chapter);
     idx = existing.chapters.length - 1;
@@ -1645,6 +1943,7 @@ function renderLibrary(){
       // If searching, keep tree auto-expanded so user sees matching chapters
       const isOpen = expandedNovelIds.has(book.id) || (q.length > 0) || isCurrent;
       const sortedChapters = getSortedChaptersAsc(book.chapters);
+      const pct = savedBookPct(book);
 
       return `<div class="tree-node ${isOpen ? 'is-open' : ''}" data-tree-book="${book.id}">
         <div class="tree-header" data-toggle-tree="${book.id}">
@@ -1659,8 +1958,13 @@ function renderLibrary(){
               <span>${book.chapters.length} chapter${book.chapters.length > 1 ? 's' : ''} (Ascending 1 → ${book.chapters.length})</span> ·
               <span>${new Date(book.added).toLocaleDateString()}</span>
             </div>
+            <div class="book-prog">
+              <div class="mini-track"><div class="mini-fill" style="width:${pct}%"></div></div>
+              <span>${pct}% read</span>
+            </div>
           </div>
           <div class="tree-actions">
+            <button class="btn small" data-rename-book="${esc(book.id)}" title="Rename novel">✎</button>
             <button class="btn small primary" data-open-book="${book.id}" title="Read novel from current/first chapter">Read</button>
             <button class="btn small danger" data-del-book="${book.id}" title="Delete novel">×</button>
           </div>
@@ -1670,11 +1974,13 @@ function renderLibrary(){
           ${sortedChapters.map((item, treeIdx) => {
             const isChActive = isCurrent && S.chapterIdx === item.originalIndex;
             const wCount = countWords(item.chapter.text || '');
+            const cp = savedChapterPct(book, item.originalIndex);
             return `<div class="tree-leaf ${isChActive ? 'active' : ''}" data-open-chapter="${book.id}" data-ch-idx="${item.originalIndex}" title="Open ${esc(item.title)}">
-              <span class="tree-leaf-icon">${isChActive ? '📖' : '📄'}</span>
+              <span class="tree-leaf-icon">${isChActive ? '📖' : (cp >= 100 ? '✅' : '📄')}</span>
               <span class="tree-leaf-num">#${treeIdx + 1}</span>
               <span class="tree-leaf-title">${esc(item.title)}</span>
-              <span class="tree-leaf-words">${wCount} words</span>
+              <span class="tree-leaf-words">${wCount} words${cp ? ' · ' + cp + '%' : ''}</span>
+              <button class="tree-leaf-edit" data-rename-chapter="${esc(book.id)}" data-ch-idx="${item.originalIndex}" title="Rename chapter">✎</button>
             </div>`;
           }).join('')}
         </div>` : ''}
@@ -1730,25 +2036,38 @@ async function goBookmark(b){
 
 /* ---------- File import ---------- */
 async function importFiles(files){
-  for(const f of files){
+  const list = [...files];
+  const total = list.length || 1;
+  for(let n = 0; n < list.length; n++){
+    const f = list[n];
+    const base = (n / total) * 100, span = 100 / total;
+    const step = (pct, label) => progressSet(base + span * clamp(pct, 0, 100) / 100, label);
+    const token = progressShow(total > 1 ? `Importing “${f.name}” (${n + 1}/${total})…` : `Importing “${f.name}”…`, base + span * 0.05);
     try{
       const name = f.name.replace(/\.[^.]+$/, "");
       let chapters;
       if(/\.pdf$/i.test(f.name)){
         if(!window.pdfjsLib) throw new Error("PDF support requires the pdf.js library (CDN)");
+        step(8, "Reading PDF…");
         const pdf = await pdfjsLib.getDocument({data: new Uint8Array(await f.arrayBuffer())}).promise;
         const pages = [];
         for(let i = 1; i <= pdf.numPages; i++){
-          setStatus(`Reading PDF page ${i} of ${pdf.numPages}…`);
+          const label = `Reading PDF page ${i} of ${pdf.numPages}…`;
+          setStatus(label); step(8 + (i / pdf.numPages) * 78, label);
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
           pages.push(content.items.map(item => item.str).join(" "));
         }
+        step(88, "Splitting chapters…");
         chapters = splitChapters(pages.join("\n\n"));
       } else if(/\.epub$/i.test(f.name)){
-        chapters = await readEpub(await f.arrayBuffer());
+        step(8, "Unpacking EPUB…");
+        chapters = await readEpub(await f.arrayBuffer(), (done, all) =>
+          step(8 + (done / Math.max(1, all)) * 80, `Reading EPUB section ${done} of ${all}…`));
       } else {
+        step(20, "Reading file…");
         const text = await f.text();
+        step(55, "Finding chapters…");
         if(/\.html?$/i.test(f.name)){
           const doc = new DOMParser().parseFromString(text, "text/html");
           doc.querySelectorAll("script,style,noscript,svg").forEach(el => el.remove());
@@ -1756,14 +2075,20 @@ async function importFiles(files){
         } else chapters = splitChapters(text);
       }
       if(!chapters.length) throw new Error("No text found");
+      step(94, "Saving to Library…");
       const book = addBook(name, chapters);
       openBook(book.id, {resume:false});
+      progressEnd(`Imported “${name}”`, token);
       setStatus("Ready");
       toast(`Imported “${name}” — ${chapters.length} chapter${chapters.length > 1 ? "s" : ""}.`);
-    }catch(e){ toast(`Could not import ${f.name}: ${e.message}`); }
+    }catch(e){
+      progressAbort(token);
+      setStatus("Ready");
+      toast(`Could not import ${f.name}: ${e.message}`);
+    }
   }
 }
-async function readEpub(buf){
+async function readEpub(buf, onProgress){
   if(!("DecompressionStream" in window)) throw new Error("EPUB needs a newer Chrome or Edge");
   const dv = new DataView(buf), u8 = new Uint8Array(buf);
   let eocd = -1;
@@ -1803,8 +2128,9 @@ async function readEpub(buf){
   opf.querySelectorAll("manifest item").forEach(it => manifest[it.getAttribute("id")] = it.getAttribute("href"));
   const spine = [...opf.querySelectorAll("spine itemref")].map(ir => manifest[ir.getAttribute("idref")]).filter(Boolean);
   const chapters = [];
-  for(const href of spine){
+  for(let si = 0; si < spine.length; si++){
     try{
+      const href = spine[si];
       const path = opfDir + href.split("#")[0];
       const html = await readEntry(path);
       const doc = new DOMParser().parseFromString(html, "text/html");
@@ -1815,6 +2141,7 @@ async function readEpub(buf){
         chapters.push({title:h ? h.textContent.trim().slice(0, 90) : `Section ${chapters.length + 1}`, text:paras.join("\n\n")});
       }
     }catch(e){}
+    if(onProgress) onProgress(si + 1, spine.length);
   }
   if(!chapters.length) throw new Error("No readable sections");
   return chapters;
@@ -2146,8 +2473,12 @@ function cachePage(url, value){
 function fetchPageHtml(url, say, { strict = true } = {}){
   if(webCache.has(url)) return Promise.resolve(webCache.get(url));
   if(say) say('Fetching page…');
+  let host = 'website';
+  try{ host = new URL(url).hostname.replace(/^www\./, ''); }catch(_){}
+  const token = progressShow(`Downloading from ${host}…`, 5);
   const controllers = [];
-  let finished = false;
+  let finished = false, started = 0;
+  const totalSources = WEB_SOURCES.length;
   const attempt = async src => {
     const ctl = new AbortController(); controllers.push(ctl);
     const timer = setTimeout(() => ctl.abort(), src.timeout || 16000);
@@ -2170,15 +2501,24 @@ function fetchPageHtml(url, say, { strict = true } = {}){
   };
   const runs = WEB_SOURCES.map(src =>
     new Promise(r => setTimeout(r, src.delay || 0))
-      .then(() => finished ? Promise.reject(new Error(src.name + ': skipped')) : attempt(src))
+      .then(() => {
+        if(finished) throw new Error(src.name + ': skipped');
+        started++;
+        progressSet(5 + Math.round(started / totalSources * 62),
+          `Downloading from ${host}… (source ${started}/${totalSources})`);
+        return attempt(src);
+      })
   );
   return Promise.any(runs).then(result => {
     finished = true;
     controllers.forEach(c => { try{ c.abort(); }catch(_){} });
     cachePage(url, result);
+    progressSet(96, 'Extracting readable text…');
+    progressEnd('Page downloaded', token);
     return result;
   }, agg => {
     finished = true;
+    progressAbort(token);
     const msgs = (agg.errors || []).map(e => e.message).filter(m => !/skipped/.test(m));
     throw new Error(msgs.join('; ') || 'all sources failed');
   });
@@ -2412,31 +2752,455 @@ async function gtranslate(text, code){
   }
   return out.join(" ");
 }
-async function translatePage(){
+/* Translate a whole page in one request so the service sees the paragraphs
+   together. Google keeps the blank lines, so the result can be split back. */
+async function gtranslatePage(texts, code){
+  const groups = []; let cur = [], size = 0;
+  for(const t of texts){
+    if(cur.length && size + t.length > 1050){ groups.push(cur); cur = []; size = 0; }
+    cur.push(t); size += t.length + 2;
+  }
+  if(cur.length) groups.push(cur);
+  const out = [];
+  for(const g of groups){
+    if(g.length === 1){ out.push(await gtranslate(g[0], code)); continue; }
+    const tr = await gtranslate(g.join("\n\n"), code);
+    const parts = tr.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
+    if(parts.length === g.length) out.push(...parts);
+    else for(const t of g) out.push(await gtranslate(t, code));
+  }
+  if(out.length !== texts.length) throw new Error("split");
+  return out;
+}
+
+/* ------------------------------------------------------------------
+   SMART STYLE: situation-aware, teacher-plain wording
+   ------------------------------------------------------------------ */
+const PLAIN_EN = [
+  ["in order to","to"],["due to the fact that","because"],["despite the fact that","even though"],
+  ["in spite of the fact that","even though"],["for the purpose of","to"],["in the event that","if"],
+  ["at this point in time","now"],["at the present time","now"],["in the near future","soon"],
+  ["a large number of","many"],["a small number of","a few"],["the majority of","most"],
+  ["a considerable amount of","a lot of"],["a significant amount of","a lot of"],
+  ["in close proximity to","near"],["in the vicinity of","near"],["with regard to","about"],
+  ["in regard to","about"],["in relation to","about"],["prior to","before"],["subsequent to","after"],
+  ["with the exception of","except"],["on account of","because of"],["as a result of","because of"],
+  ["in the absence of","without"],["in the course of","during"],["by means of","by"],
+  ["in terms of","for"],["each and every","every"],["first and foremost","first"],
+  ["make a decision","decide"],["take into consideration","consider"],["come to the conclusion","decide"],
+  ["give rise to","cause"],["is able to","can"],["are able to","can"],["was able to","could"],
+  ["were able to","could"],["notwithstanding the fact that","even though"],
+  ["regardless of the fact that","even though"],["notwithstanding","even so"],
+  ["nevertheless","still"],["nonetheless","still"],
+  ["therefore","so"],["consequently","so"],["accordingly","so"],["furthermore","also"],["moreover","also"],
+  ["additionally","also"],["thus","so"],["hence","so"],["albeit","though"],["whilst","while"],
+  ["amongst","among"],["towards","toward"],["thereafter","after that"],["henceforth","from now on"],
+  ["subsequently","later"],["previously","before"],["currently","now"],["immediately","right away"],
+  ["eventually","in the end"],["ultimately","in the end"],["occasionally","sometimes"],["frequently","often"],
+  ["primarily","mainly"],["particularly","especially"],["extremely","very"],["exceptionally","very"],
+  ["remarkably","surprisingly"],["considerably","much"],["entirely","completely"],["solely","only"],
+  ["merely","just"],["commonly","often"],["essentially","basically"],["approximately","about"],
+  ["numerous","many"],["sufficient","enough"],["significant","big"],["substantial","large"],
+  ["additional","more"],["initial","first"],["preliminary","first"],["fundamental","basic"],
+  ["essential","needed"],["utilize","use"],["utilizes","uses"],["utilized","used"],["utilizing","using"],
+  ["utilization","use"],["commence","start"],["commences","starts"],["commenced","started"],
+  ["commencing","starting"],["commencement","start"],["terminate","end"],["terminated","ended"],
+  ["endeavor","try"],["endeavors","tries"],["endeavored","tried"],["endeavoring","trying"],
+  ["obtain","get"],["obtained","got"],["obtaining","getting"],["acquire","get"],["acquired","got"],
+  ["possess","have"],["possessed","had"],["require","need"],["requires","needs"],["required","needed"],
+  ["assist","help"],["assisted","helped"],["assistance","help"],["demonstrate","show"],
+  ["demonstrated","showed"],["indicate","show"],["indicated","showed"],["inquire","ask"],
+  ["inquired","asked"],["respond","answer"],["responded","answered"],["purchase","buy"],
+  ["purchased","bought"],["anticipate","expect"],["anticipated","expected"],["comprehend","understand"],
+  ["comprehended","understood"],["initiate","start"],["initiated","started"],["facilitate","make easier"],
+  ["facilitated","made easier"],["subsequent","later"],["reside","live"],["resided","lived"],
+  ["residence","home"],["depart","leave"],["departed","left"],["offspring","children"],
+  ["spouse","partner"],["deceased","dead"],["physician","doctor"],["remuneration","pay"]
+];
+const PLAIN_OTHER = {
+  es:[["sin embargo","pero"],["no obstante","pero"],["asimismo","también"],["posteriormente","después"],
+      ["previamente","antes"],["utilizar","usar"],["utiliza","usa"],["aproximadamente","más o menos"],
+      ["numerosos","muchos"],["demostrar","mostrar"],["comenzar","empezar"],["finalizar","terminar"],
+      ["obtener","conseguir"],["requerir","necesitar"],["en la actualidad","ahora"],
+      ["en consecuencia","así que"],["por consiguiente","así que"],["debido a que","porque"],
+      ["con el fin de","para"],["a fin de","para"],["de inmediato","enseguida"]],
+  fr:[["cependant","mais"],["néanmoins","pourtant"],["toutefois","pourtant"],["de plus","aussi"],
+      ["par conséquent","donc"],["ultérieurement","plus tard"],["auparavant","avant"],
+      ["approximativement","environ"],["nombreux","beaucoup de"],["démontrer","montrer"],
+      ["nécessiter","avoir besoin de"],["actuellement","en ce moment"],["finalement","à la fin"],
+      ["soudainement","tout à coup"],["immédiatement","tout de suite"],
+      ["en raison de","à cause de"],["afin de","pour"],["dans le but de","pour"],
+      ["malgré le fait que","même si"]],
+  pt:[["no entanto","mas"],["contudo","mas"],["entretanto","mas"],["além disso","também"],
+      ["portanto","então"],["consequentemente","então"],["posteriormente","depois"],
+      ["anteriormente","antes"],["utilizar","usar"],["aproximadamente","mais ou menos"],
+      ["numerosos","muitos"],["demonstrar","mostrar"],["iniciar","começar"],["finalizar","terminar"],
+      ["obter","conseguir"],["necessitar","precisar"],["atualmente","agora"],
+      ["imediatamente","na hora"],["devido a","por causa de"],["a fim de","para"]],
+  de:[["jedoch","aber"],["dennoch","trotzdem"],["außerdem","auch"],["folglich","also"],
+      ["anschließend","danach"],["zuvor","vorher"],["verwenden","nutzen"],["zahlreiche","viele"],
+      ["demonstrieren","zeigen"],["erhalten","bekommen"],["erfordern","brauchen"],["derzeit","jetzt"],
+      ["aufgrund","wegen"]],
+  hi:[["तथापि","लेकिन"],["परन्तु","लेकिन"],["परंतु","लेकिन"],["अतः","इसलिए"],
+      ["इसके अतिरिक्त","इसके अलावा"],["तत्पश्चात","उसके बाद"],["पूर्वतः","पहले"],
+      ["प्रयोग करना","इस्तेमाल करना"],["अनेक","बहुत से"],["प्रदर्शित करना","दिखाना"],
+      ["आरंभ करना","शुरू करना"],["समाप्त करना","खत्म करना"],["प्राप्त करना","पाना"],
+      ["आवश्यकता है","ज़रूरत है"],["वर्तमान में","अभी"],["हेतु","के लिए"]],
+  ur:[["تاہم","لیکن"],["البتہ","لیکن"],["لہٰذا","اس لیے"],["مزید برآں","اس کے علاوہ"],
+      ["بے شمار","بہت سے"],["ظاہر کرنا","دکھانا"],["آغاز کرنا","شروع کرنا"],
+      ["حاصل کرنا","پانا"],["فی الحال","ابھی"]],
+  id:[["namun","tapi"],["oleh karena itu","jadi"],["selanjutnya","lalu"],
+      ["memulai","mulai"],["memperoleh","mendapat"],["saat ini","sekarang"],["karena itu","jadi"]]
+};
+/* Idioms and hard words a teacher would pause on. */
+const GLOSS_EN = [
+  ["kicked the bucket","he died"],["under the weather","sick"],["once in a blue moon","very rarely"],
+  ["break the ice","start a friendly conversation"],["piece of cake","very easy"],
+  ["hit the sack","went to bed"],["spill the beans","tell the secret"],
+  ["cost an arm and a leg","very expensive"],["let the cat out of the bag","reveal the secret"],
+  ["beat around the bush","avoid saying the point"],["bite the bullet","accept something painful"],
+  ["burn the midnight oil","work late at night"],["on cloud nine","very happy"],
+  ["see eye to eye","agree"],["sit on the fence","refuse to choose a side"],
+  ["the ball is in your court","it is your turn to act"],["pulling my leg","joking with me"],
+  ["raining cats and dogs","raining very hard"],["in hot water","in trouble"],
+  ["a blessing in disguise","something good that looked bad"],["add insult to injury","make a bad thing worse"],
+  ["kill two birds with one stone","do two things at once"],["the last straw","the final problem"],
+  ["call it a day","stop for now"],["get out of hand","become uncontrolled"],
+  ["speak of the devil","we were just talking about them"],["the calm before the storm","quiet time before trouble"],
+  ["at the drop of a hat","right away"],["back to square one","start again"],
+  ["cut corners","do it the quick, careless way"],["down to earth","simple and practical"],
+  ["easier said than done","hard to actually do"],["know the ropes","know how things work"],
+  ["lose one's temper","get angry"],["make ends meet","have just enough money"],
+  ["out of the blue","suddenly"],["pull yourself together","calm down"],
+  ["speak your mind","say what you really think"],["the tip of the iceberg","a small part of a big problem"],
+  ["under one's nose","right in front of them"],["up in the air","not decided yet"],
+  ["walk on eggshells","be very careful"],["when pigs fly","never"],
+  ["get the hang of","learn how to do"],["change of heart","changed your mind"],
+  ["keep an eye on","watch"],["on the same page","in agreement"],["pull strings","use influence"],
+  ["read between the lines","guess the hidden meaning"],["second thoughts","doubts"],
+  ["take with a grain of salt","not fully believe"],["turn a blind eye","ignore on purpose"],
+  ["a far cry from","very different from"],["all ears","listening carefully"],
+  ["bite off more than you can chew","take on too much"],["blow off steam","release anger"],
+  ["by the skin of your teeth","just barely"],["cut to the chase","get to the point"],
+  ["wild goose chase","a pointless search"],["gut feeling","instinct"],
+  ["in the same boat","in the same situation"],["leave no stone unturned","try everything"],
+  ["miss the boat","lose the chance"],["on thin ice","in a risky situation"],
+  ["right off the bat","right away"],["the best of both worlds","two good things at once"],
+  ["the elephant in the room","the obvious problem nobody mentions"],["through thick and thin","in good times and bad"],
+  ["tie the knot","get married"],["water under the bridge","past and forgotten"],
+  ["ineffable","too great to describe"],["ubiquitous","everywhere"],["ephemeral","very short-lived"],
+  ["ethereal","light and airy"],["inexorable","impossible to stop"],["implacable","cannot be calmed"],
+  ["recalcitrant","refusing to obey"],["sanguine","hopeful"],["languid","slow and relaxed"],
+  ["morose","gloomy"],["pensive","deep in thought"],["reverie","daydream"],
+  ["machinations","secret plans"],["ostensible","seeming"],["vicissitudes","changes of fortune"],
+  ["quintessential","most typical"],["serendipity","lucky chance"],["cacophony","harsh noise"],
+  ["melancholy","deep sadness"],["solace","comfort"],["trepidation","fear"],
+  ["consternation","shock and worry"],["resignation","accepting without fighting"],
+  ["apathy","lack of interest"],["audacity","boldness"],["malevolence","evil intent"],
+  ["vigilance","watchfulness"],["prudence","good judgment"],["valor","bravery"],
+  ["wrath","great anger"],["anguish","great pain"],["desolation","emptiness and ruin"],
+  ["turmoil","confusion and trouble"],["strife","conflict"],["tranquility","peace"],
+  ["opulence","great wealth"],["affluence","wealth"],["servitude","slavery"],
+  ["tyranny","cruel rule"],["betrothed","engaged to be married"],["paramour","lover"],
+  ["steed","horse"],["apparition","ghost"],["specter","ghost"],["portent","warning sign"],
+  ["omen","sign of the future"],["prophecy","prediction"],["abyss","deep hole"],
+  ["chasm","deep gap"],["precipice","cliff edge"],["luminescence","soft light"],
+  ["incandescent","glowing"],["frigid","very cold"],["scorching","very hot"],
+  ["tempest","storm"],["deluge","flood"],["crimson","deep red"],["azure","sky blue"],
+  ["obsidian","black like glass"],["gilded","covered in gold"],["corpulent","fat"],
+  ["gaunt","very thin"],["haggard","tired and worn"]
+];
+function escapeRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/'/g, "['’]"); }
+function buildTable(pairs){
+  const map = new Map();
+  for(const [from, to] of pairs) map.set(from.toLowerCase(), to);
+  const keys = [...map.keys()].sort((a, b) => b.length - a.length).map(escapeRe);
+  return {map, re:new RegExp("(?<![\\p{L}\\p{N}])(" + keys.join("|") + ")(?![\\p{L}\\p{N}])", "giu")};
+}
+const TR_TABLES = {en:buildTable(PLAIN_EN)};
+for(const k of Object.keys(PLAIN_OTHER)) TR_TABLES[k] = buildTable(PLAIN_OTHER[k]);
+const GLOSS_TABLE = buildTable(GLOSS_EN);
+function caseLike(src, to){
+  if(src === src.toUpperCase() && src !== src.toLowerCase()) return to.toUpperCase();
+  if(/^\p{Lu}/u.test(src)) return to.charAt(0).toUpperCase() + to.slice(1);
+  return to;
+}
+function applyTable(text, table){
+  return text.replace(table.re, m => {
+    const rep = table.map.get(m.toLowerCase().replace(/[’]/g, "'"));
+    return rep ? caseLike(m, rep) : m;
+  });
+}
+/* Break sentences a listener would lose track of. Conservative: only clear
+   clause breaks, never dashes used as asides. */
+function shortenSentences(text){
+  const parts = text.split(/(?<=[^\s])\s*[;；]\s+|,\s*(?:and|but|so|yet)\s+(?=(?:he|she|they|it|we|I|you|the|a|an|his|her|their|this|that|there)\b)/i);
+  if(parts.length < 2) return text;
+  const words = countWords(text);
+  if(words < 26) return text;
+  return parts.map((c, i) => {
+    c = c.trim();
+    if(!c) return "";
+    c = c.replace(/^(?:and|but|so|yet)\s+/i, "");
+    if(!c) return "";
+    c = c.charAt(0).toUpperCase() + c.slice(1);
+    if(i < parts.length - 1 && !/[.!?…]["'”’)]?$/.test(c)) c += ".";
+    return c;
+  }).filter(Boolean).join(" ");
+}
+function addGlosses(text){
+  let count = 0;
+  const seen = new Set();
+  return text.replace(GLOSS_TABLE.re, m => {
+    if(m.charAt(0) === m.charAt(0).toUpperCase() && m.charAt(0) !== m.charAt(0).toLowerCase()) return m;
+    const key = m.toLowerCase().replace(/[’]/g, "'");
+    if(seen.has(key)) return m;
+    seen.add(key);
+    if(count >= 2) return m;
+    const gloss = GLOSS_TABLE.map.get(key);
+    if(!gloss) return m;
+    count++;
+    return m + " (meaning: " + gloss + ")";
+  });
+}
+function tidyText(t){
+  t = String(t || "").replace(/\*\*|__/g, "").replace(/\s+/g, " ").trim();
+  t = t.replace(/\s+([,.;:!?…])/g, "$1");
+  t = t.replace(/([,;:])(?=\p{L})/gu, "$1 ");
+  t = t.replace(/\b(But|And|So|Still|Also),\s+/g, "$1 ");
+  t = t.replace(/\.\.(?!\.)/g, ".");
+  return t;
+}
+/* Turn raw machine output into the chosen reading style. */
+function polish(text, code, style, fromAI){
+  let t = tidyText(text);
+  if(!t || style === "direct") return t;
+  t = shortenSentences(t);
+  const table = TR_TABLES[code];
+  if(table) t = applyTable(t, table);
+  t = tidyText(t);
+  if(!fromAI && style === "teacher" && code === "en") t = addGlosses(t);
+  return t;
+}
+
+/* ------------------------------------------------------------------
+   AI TEACHER (free shared model, whole page with story context)
+   ------------------------------------------------------------------ */
+const AI_URL = "https://text.pollinations.ai/openai";
+let aiGate = 0, aiBusyNoteAt = 0, aiPrefetchTimer = null;
+function aiSystemPrompt(target, style){
+  const plain = style === "direct"
+    ? "Translate closely and accurately, keeping the author's wording."
+    : "Use simple, everyday words that a 12-year-old could follow. Keep sentences short. No fancy or academic vocabulary.";
+  const idiom = style === "teacher"
+    ? " When an idiom or metaphor appears, make its meaning clear inside the sentence with plain words instead of explaining it outside the text."
+    : " Translate idioms by what they really mean, never word for word.";
+  return "You are a warm, patient literature teacher translating a story for a learner.\n"
+    + "Translate the numbered paragraphs into " + target + ".\n"
+    + "Rules:\n"
+    + "- " + plain + idiom + "\n"
+    + "- Keep every character name, place name, title and honorific exactly as written.\n"
+    + "- Keep the same number of paragraphs, and start each one with its number in square brackets, like [1].\n"
+    + "- Stay aware of the scene: who is speaking, who is being spoken to, and how they feel.\n"
+    + "- Output only the numbered translation. No notes, no commentary, no title, no markdown.";
+}
+function parseNumbered(txt, n){
+  const out = new Array(n).fill("");
+  const re = /(?:^|\n)\s*(?:\[(\d{1,2})\]|(\d{1,2})[).:])\s+/g;
+  const marks = [];
+  let m;
+  while((m = re.exec(txt))){
+    const num = +(m[1] || m[2]);
+    if(num >= 1 && num <= n) marks.push({num, at:m.index, start:m.index + m[0].length});
+  }
+  if(!marks.length) return null;
+  marks.forEach((mk, i) => {
+    const end = i + 1 < marks.length ? marks[i + 1].at : txt.length;
+    out[mk.num - 1] = txt.slice(mk.start, end).trim();
+  });
+  return out.every(Boolean) ? out : null;
+}
+async function aiTranslate(texts, target, context, onWait){
+  const wait = aiGate - Date.now();
+  if(wait > 9000){
+    const err = new Error("ai-busy-cooldown"); err.busy = true; throw err;
+  }
+  if(wait > 0){
+    if(onWait) onWait(Math.ceil(wait / 1000));
+    await new Promise(r => setTimeout(r, wait));
+  }
+  aiGate = Date.now() + 46000;
+  const numbered = texts.map((t, i) => "[" + (i + 1) + "] " + oneLine(t)).join("\n\n");
+  const user = (context ? "Earlier in the story, for context only (do not translate):\n" + context.slice(-1400) + "\n\n" : "")
+    + "Translate these paragraphs:\n\n" + numbered;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 60000);
+  let res;
+  try{
+    res = await fetch(AI_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"openai", referrer:"ultra-reader", temperature:0.25,
+        messages:[
+          {role:"system", content:aiSystemPrompt(target, S.settings.translateStyle || "simple")},
+          {role:"user", content:user}
+        ]
+      }),
+      signal:ctrl.signal
+    });
+  }catch(e){
+    aiGate = Date.now() + 12000;
+    throw new Error("ai-network");
+  }finally{ clearTimeout(timer); }
+  if(res.status === 402 || res.status === 429 || res.status === 403){
+    aiGate = Date.now() + 60000;
+    const err = new Error("ai-busy"); err.busy = true; throw err;
+  }
+  if(!res.ok) throw new Error("ai-http-" + res.status);
+  let data;
+  try{ data = await res.json(); }catch(e){ throw new Error("ai-json"); }
+  const txt = data && data.choices && data.choices[0] && data.choices[0].message
+    ? String(data.choices[0].message.content || "") : "";
+  const parsed = parseNumbered(txt, texts.length);
+  if(!parsed) throw new Error("ai-format");
+  return parsed;
+}
+function oneLine(t){ return String(t).replace(/\s+/g, " ").trim(); }
+function pageContext(page){
+  const idx = S.pages.indexOf(page);
+  let ctx = "";
+  if(idx > 0){
+    const prev = S.pages[idx - 1];
+    ctx = (prev.paras || []).map(p => p.text).join("\n\n");
+  } else if(idx === 0 && S.book && S.chapterIdx > 0){
+    const ch = S.book.chapters[S.chapterIdx - 1];
+    if(ch) ctx = String(ch.text || "").slice(-1400);
+  }
+  return ctx.slice(-1400);
+}
+function noteAiBusy(){
+  const now = Date.now();
+  if(now - aiBusyNoteAt < 120000) return;
+  aiBusyNoteAt = now;
+  toast("AI teacher is busy — using the fast translator for now.");
+}
+async function aiTranslatePage(page, key){
+  const code = LANG_CODES[S.settings.autoTranslate];
+  const style = S.settings.translateStyle || "simple";
+  const res = await aiTranslate(page.paras.map(p => p.text), S.settings.autoTranslate,
+    pageContext(page), secs => progressSet(null, "AI teacher is resting " + secs + "s…"));
+  res.forEach((t, i) => {
+    const p = page.paras[i];
+    if(!p) return;
+    p.display = polish(t, code, style, true);
+    p.trKey = key;
+  });
+  return res.length;
+}
+/* Quietly translate the next page while the reader is still on this one. */
+function scheduleAiPrefetch(){
+  clearTimeout(aiPrefetchTimer);
+  if(S.settings.translateEngine !== "ai" || S.settings.autoTranslate === "off") return;
+  const page = S.pages[S.pageIdx];
+  if(!page) return;
+  const next = S.pages[S.pages.indexOf(page) + 1];
+  if(!next || !next.paras || !next.paras.length) return;
+  const delay = Math.max(1500, aiGate - Date.now() + 1200);
+  aiPrefetchTimer = setTimeout(async () => {
+    if(S.settings.translateEngine !== "ai" || S.settings.autoTranslate === "off") return;
+    const key = trKey();
+    if(next._trBusy || next.paras.every(p => p.trKey === key)) return;
+    next._trBusy = true;
+    try{
+      await aiTranslatePage(next, key);
+      if(S.pages[S.pageIdx] === next){ rebuildPageUnits(next); renderPage(); }
+    }catch(e){}
+    finally{ next._trBusy = false; }
+  }, delay);
+}
+
+function syncTranslateOptions(){
+  const box = $("trExtra");
+  if(box) box.hidden = S.settings.autoTranslate === "off";
+}
+async function translatePage(force){
   const tl = S.settings.autoTranslate;
   if(tl === "off") return;
   const code = LANG_CODES[tl];
   const page = S.pages[S.pageIdx];
-  if(!page) return;
-  const need = page.paras.filter(p => p.trLang !== code);
+  if(!page || !page.paras.length) return;
+  const key = trKey();
+  let need = page.paras.filter(p => force || p.trKey !== key);
   if(!need.length) return;
+  if(page._trBusy) return;
   const myGen = renderGen;
+  const style = S.settings.translateStyle || "simple";
+  const engine = S.settings.translateEngine || "google";
   setStatus("Translating…");
-  let fail = 0;
-  await pool(need, 3, async p => {
-    const key = code + "|" + p.text;
+  const token = progressShow(engine === "ai" ? "AI teacher is reading the page…" : "Translating…", 6, 94);
+  let failed = 0;
+
+  // 1. Try the AI teacher first (whole page + story context).
+  if(engine === "ai"){
+    page._trBusy = true;
     try{
-      let t = trCache.get(key);
-      if(!t){ t = await gtranslate(p.text, code); trCache.set(key, t); }
-      p.display = t; p.trLang = code;
-    }catch(e){ fail++; p.display = p.text; p.trLang = code; }
-  });
-  if(renderGen !== myGen || S.pages[S.pageIdx] !== page) return;
+      await aiTranslatePage(page, key);
+      if(renderGen !== myGen || S.pages[S.pageIdx] !== page){ progressAbort(token); return; }
+      progressSet(96, "Checking the wording…");
+      rebuildPageUnits(page);
+      renderPage();
+      progressEnd("AI translation ready", token);
+      if(S.playing && !S.paused) restartSpeech();
+      setStatus(S.playing ? "Reading" : "Ready");
+      scheduleAiPrefetch();
+      return;
+    }catch(e){
+      if(e && e.busy) noteAiBusy();
+      progressSet(Math.max(12, progValue), "Falling back to the fast translator…");
+    }finally{ page._trBusy = false; }
+    need = page.paras.filter(p => force || p.trKey !== key);
+    if(!need.length){ progressEnd("Translation ready", token); return; }
+  }
+
+  // 2. Google path: one request for the whole page when possible, so the
+  //    service sees the paragraphs together instead of one by one.
+  let doneCount = 0;
+  try{
+    if(need.length === page.paras.length && page.paras.length > 1){
+      const chunk = page.paras.slice(0).map(p => p.text);
+      const outs = await gtranslatePage(chunk, code);
+      outs.forEach((t, i) => {
+        const p = page.paras[i];
+        p.display = polish(t, code, style, false);
+        p.trKey = key;
+      });
+      doneCount = outs.length;
+      progressSet(88, "Polishing the wording…");
+    }else{
+      throw new Error("per-paragraph");
+    }
+  }catch(e){
+    await pool(need, 3, async p => {
+      const ck = code + "|" + p.text;
+      try{
+        let t = trCache.get(ck);
+        if(!t){ t = await gtranslate(p.text, code); trCache.set(ck, t); }
+        p.display = polish(t, code, style, false);
+        p.trKey = key;
+      }catch(err){ failed++; p.display = p.text; p.trKey = key; }
+      doneCount++;
+      progressSet(12 + (doneCount / need.length) * 78, `Translating ${doneCount} of ${need.length}…`);
+    });
+  }
+  if(renderGen !== myGen || S.pages[S.pageIdx] !== page){ progressAbort(token); return; }
   rebuildPageUnits(page);
   renderPage();
-  if(fail) toast("Some text could not be translated — showing the original.");
+  progressEnd("Translation ready", token);
+  if(failed) toast("Some text could not be translated — showing the original.");
   if(S.playing && !S.paused) restartSpeech();
   setStatus(S.playing ? "Reading" : "Ready");
+  if(engine === "ai") scheduleAiPrefetch();
 }
 
 /* ================================================================
@@ -2654,12 +3418,24 @@ Tomorrow, the mountain would remember his name.`;
 /* ================================================================
    INIT & EVENTS
    ================================================================ */
+function syncHeaderHeight(){
+  const h = document.querySelector("header");
+  const v = h ? Math.round(h.getBoundingClientRect().height) : 66;
+  document.documentElement.style.setProperty("--headerH", v + "px");
+}
 function init(){
   if(!ttsOK) $("speechWarning").hidden = false;
+  syncHeaderHeight();
+  addEventListener("resize", syncHeaderHeight);
+  addEventListener("orientationchange", () => setTimeout(syncHeaderHeight, 180));
+  setTimeout(syncHeaderHeight, 800);
 
   $("translateSelect").innerHTML = '<option value="off">Off (original language)</option>' +
     LANGS.map(([n,c]) => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
   $("translateSelect").value = S.settings.autoTranslate;
+  $("translateStyle").value = S.settings.translateStyle;
+  $("translateEngine").value = S.settings.translateEngine;
+  syncTranslateOptions();
   $("speechLang").innerHTML = '<option value="auto">Auto</option>' +
     LANGS.map(([n,c]) => `<option value="${esc(c)}">${esc(n)}</option>`).join("");
   $("speechLang").value = S.settings.speechLang;
@@ -2847,6 +3623,12 @@ function init(){
     if(b){ goToPage(+b.dataset.page); if(innerWidth < 720) closeDrawer(); }
   });
   $("chaptersList").addEventListener("click", e => {
+    const edit = e.target.closest("[data-rename-chapter]");
+    if(edit){
+      e.preventDefault(); e.stopPropagation();
+      openRenameChapter(edit.dataset.renameChapter, +edit.dataset.chIdx);
+      return;
+    }
     const ch = e.target.closest("[data-ch]");
     const nav = e.target.closest("[data-webnav]");
     if(ch){ loadChapter(+ch.dataset.ch); if(innerWidth < 720) closeDrawer(); }
@@ -2871,9 +3653,23 @@ function init(){
   $("highlightSelect").onchange = e => { S.settings.highlight = e.target.value; saveSettings(); const u = currentUnit(); if(u && (S.playing || $("content").querySelector(".hl-w,.hl-s,.hl-p"))) highlightUnit(u, u.start, false); };
   $("autoScroll").onchange = e => { S.settings.autoScroll = e.target.checked; saveSettings(); };
   $("translateSelect").onchange = e => {
-    S.settings.autoTranslate = e.target.value; saveSettings();
+    S.settings.autoTranslate = e.target.value; saveSettings(); syncTranslateOptions();
     const page = S.pages[S.pageIdx];
     if(page){ rebuildPageUnits(page); pos.u = clamp(pos.u, 0, Math.max(0, page.units.length - 1)); renderPage(); if(S.playing && !S.paused) restartSpeech(); }
+  };
+  $("translateStyle").onchange = e => {
+    S.settings.translateStyle = e.target.value; saveSettings();
+    if(S.settings.autoTranslate !== "off") translatePage(true);
+    toast(e.target.value === "teacher" ? "Teacher style — plain words with short explanations."
+      : e.target.value === "simple" ? "Simple words — short, everyday language."
+      : "Direct translation — the author's own wording.");
+  };
+  $("translateEngine").onchange = e => {
+    S.settings.translateEngine = e.target.value; saveSettings();
+    if(S.settings.autoTranslate !== "off"){
+      translatePage(true);
+      if(e.target.value === "ai") toast("AI teacher reads the whole page — a few seconds per page.");
+    }
   };
   $("btnFonts").onclick = async () => {
     openModal("modalFonts");
@@ -2990,6 +3786,13 @@ function init(){
 
   /* Modals */
   document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeModals);
+  document.querySelectorAll("[data-rename-close]").forEach(b => b.onclick = closeRenameModal);
+  $("btnEditSave").onclick = saveRename;
+  $("editInput").addEventListener("keydown", e => {
+    if(e.key === "Enter"){ e.preventDefault(); saveRename(); }
+  });
+  $("btnEditCh").onclick = () => { if(S.book) openRenameChapter(S.book.id, S.chapterIdx); };
+  $("docSub").onclick = () => { if(S.book) openRenameBook(S.book.id); };
   document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e => { if(e.target === m) closeModals(); }));
   $("btnOpenRead").onclick = () => {
     const u = $("webUrlInput").value;
@@ -3012,7 +3815,21 @@ function init(){
   $("libPaste").onclick = () => { closeModals(); openModal("modalPaste"); };
   $("libWeb").onclick = () => { closeModals(); openModal("modalWeb"); };
   $("libraryList").addEventListener("click", e => {
-    // 1. Delete button
+    // 1. Rename controls
+    const renameBookBtn = e.target.closest("[data-rename-book]");
+    if(renameBookBtn){
+      e.stopPropagation();
+      openRenameBook(renameBookBtn.dataset.renameBook);
+      return;
+    }
+    const renameChapterBtn = e.target.closest("[data-rename-chapter]");
+    if(renameChapterBtn){
+      e.preventDefault(); e.stopPropagation();
+      openRenameChapter(renameChapterBtn.dataset.renameChapter, +renameChapterBtn.dataset.chIdx);
+      return;
+    }
+
+    // 2. Delete button
     const delBtn = e.target.closest("[data-del-book]");
     if(delBtn){
       e.stopPropagation();
