@@ -269,10 +269,10 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
   main{padding:14px 12px 120px}
   .reader-card{padding:26px 20px}
   #content{font-size:17px}
-  .transport{bottom:0;left:0;right:0;translate:none;transform:none;border-radius:0;justify-content:center;padding:8px 6px;border-left:0;border-right:0;border-bottom:0}
-  .tbtn{width:38px;height:38px;font-size:14px}
-  .tbtn.play{width:50px;height:50px}
-  #toasts{bottom:76px}
+  .transport{bottom:0;left:0;right:0;translate:none;transform:none;border-radius:0;justify-content:space-between;gap:2px;padding:5px 6px calc(5px + env(safe-area-inset-bottom,0px));border-left:0;border-right:0;border-bottom:0}
+  .tbtn{width:auto;height:34px;font-size:13px;flex:1 1 0;min-width:0}
+  .tbtn.play{width:auto;height:44px;flex:1.15 1 0;font-size:18px}
+  #toasts{bottom:64px}
   .url-row .btn{padding:8px 10px;font-size:12px}
   .drawer{width:100vw}
   .browser-stage{height:58vh;min-height:280px}
@@ -1372,6 +1372,33 @@ function addBook(title, chapters){
   library.unshift(book); saveLibrary();
   return book;
 }
+/* Only merge pages that share a chapter-style novel URL, e.g. /novel/x/chapter-12. */
+function webNovelKey(url){
+  try{
+    const u = new URL(url);
+    if(/(?:chapter|chap|ch)[-_\/]?\d+/i.test(u.pathname)){
+      const p = u.pathname.replace(/(?:\/)?(?:chapter|chap|ch)[-_\/]?\d+[^\/]*$/i, '/');
+      return u.origin + p;
+    }
+  }catch(_){}
+  return url;
+}
+/* Keep web pages in the Library. keepId updates the entry that is already being
+   read, so moving to the next/previous web chapter doesn't create duplicates. */
+function persistWebBook(book, keepId){
+  let existing = keepId ? library.find(b => b.id === keepId) : library.find(b => b.id === book.id);
+  if(!existing && book.webUrl){
+    const key = webNovelKey(book.webUrl);
+    existing = library.find(b => b.source === "web" && b.webUrl && webNovelKey(b.webUrl) === key);
+  }
+  if(existing){
+    Object.assign(existing, book, {id: existing.id, added: existing.added});
+    saveLibrary();
+    return existing;
+  }
+  library.unshift(book); saveLibrary();
+  return book;
+}
 function openBook(id, opts = {}){
   const book = library.find(b => b.id === id);
   if(!book){ toast("That book is no longer in your library."); return; }
@@ -1524,8 +1551,8 @@ function addBookmark(){
 async function goBookmark(b){
   closeModals();
   if(b.source === "web" && b.url){
-    await loadWebBook(b.url, {});
-    if(S.book && S.book.id === "web:" + b.url){
+    await loadWebBook(b.url, {keepId: b.bookId});
+    if(S.book && S.book.webUrl === b.url){
       S.pageIdx = clamp(b.page, 0, S.pages.length - 1); pos.u = b.u || 0;
       renderPage(); const u = currentUnit(); if(u) highlightUnit(u, u.start);
       $("readerCard").scrollIntoView({behavior:"smooth"});
@@ -2117,7 +2144,7 @@ async function readWebPageAsBook(opts = {}){
     added: Date.now()
   };
   await openWebBookObject(book, { autoplay: opts.autoplay });
-  toast('Page ready — ' + parsed.text.split(/\s+/).filter(Boolean).length + ' words.');
+  toast('Saved to Library — ' + parsed.text.split(/\s+/).filter(Boolean).length + ' words ready.');
 }
 
 async function loadWebBook(url, opts = {}){
@@ -2140,6 +2167,7 @@ async function loadWebBook(url, opts = {}){
 
 function openWebBookObject(book, opts = {}){
   stopPlayback();
+  book = persistWebBook(book, opts.keepId);
   S.book = book; S.mode = 'reader';
   S.chapterIdx = 0; buildPages(); S.pageIdx = 0; pos.u = 0;
   $('docSub').textContent = book.title;
@@ -2155,7 +2183,7 @@ async function goToWebChapter(dir){
   if(!S.book || S.book.source !== 'web') return;
   const url = dir === 'next' ? S.book.webNextUrl : S.book.webPrevUrl;
   if(!url){ toast('No ' + dir + ' chapter found.'); return; }
-  await loadWebBook(url, {autoplay: S.playing && !S.paused});
+  await loadWebBook(url, {autoplay: S.playing && !S.paused, keepId: S.book.id});
 }
 
 /* ================================================================
