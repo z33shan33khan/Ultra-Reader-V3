@@ -243,6 +243,16 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 .skip-chips{display:flex;flex-wrap:wrap;gap:5px}
 .skip-chips button{font:inherit;font-size:12px;padding:4px 9px;border-radius:7px;border:1px solid var(--line2);background:var(--surface2);color:var(--muted);cursor:pointer;transition:.15s}
 .skip-chips button:hover{color:var(--cinnabar);border-color:var(--cinnabar)}
+.gpanel{border:1px solid var(--line2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:9px;background:var(--bg2)}
+.gchips{display:flex;flex-wrap:wrap;gap:6px}
+.gchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 9px;border-radius:999px;border:1px solid var(--line2);background:var(--surface2)}
+.gchip i{font-style:normal;color:var(--amber)}
+.gchip button{font:inherit;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 0 0 2px}
+.gchip button:hover{color:var(--cinnabar)}
+.grow{display:flex;gap:6px;flex-wrap:wrap}
+.grow input{flex:1 1 140px;min-width:0;font:inherit;font-size:13px;padding:9px 11px;border-radius:9px;border:1px solid var(--line2);background:var(--surface2);color:var(--text)}
+.gbtn{font:inherit;font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--surface2);color:var(--text);cursor:pointer}
+.gbtn.on{background:var(--amber);color:#241a06;border-color:var(--amber)}
 .rules-list{display:flex;flex-direction:column;gap:6px;max-height:264px;overflow-y:auto;padding-right:4px}
 .rule{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:7px 10px;transition:.15s}
 .rule:hover{border-color:var(--line2)}
@@ -487,6 +497,36 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
   border-color: var(--amber);
 }
 
+
+/* ---------- Orb mode: the dock folds into a sphere while reading ---------- */
+.transport{transition:width .5s cubic-bezier(.65,0,.25,1),left .5s cubic-bezier(.65,0,.25,1),translate .5s cubic-bezier(.65,0,.25,1),bottom .5s,padding .5s,border-radius .5s,background .4s,box-shadow .4s,border-color .4s}
+.transport .tbtn{transition:width .4s cubic-bezier(.65,0,.25,1),flex .4s cubic-bezier(.65,0,.25,1),opacity .3s,transform .4s cubic-bezier(.65,0,.25,1),margin .4s,border-width .4s,background .18s}
+.transport.folding{overflow:visible}
+.transport.folding .tbtn:not(.play){width:0!important;min-width:0!important;flex:0 0 0!important;margin:0 -3px;border-width:0;opacity:0;transform:scale(.2) rotate(-90deg);pointer-events:none;overflow:hidden}
+#transport.orb{position:fixed;left:50%;right:auto;translate:-50% 0;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:64px!important;height:64px;padding:0;gap:0;border-radius:50%;justify-content:center;
+  background:transparent;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;animation:none}
+#transport.orb::before{content:"";position:absolute;inset:-1px;border-radius:50%;border:1px dashed color-mix(in srgb,var(--amber) 60%,transparent);animation:orbSpin 16s linear infinite;pointer-events:none}
+#transport.orb::after{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 68%);opacity:.7;animation:orbBreath 3.2s ease-in-out infinite;pointer-events:none;z-index:-1}
+#transport.orb .tbtn.play{width:50px;height:50px;flex:none;font-size:18px;margin:0;
+  background:radial-gradient(circle at 32% 26%,#fff6dc,var(--amber2) 30%,var(--amber) 62%,var(--amber-deep));
+  box-shadow:inset -5px -7px 12px rgba(120,70,0,.35),0 6px 22px var(--glow);animation:orbFloat 3.2s ease-in-out infinite}
+#transport.orb .tbtn:not(.play){position:absolute;left:50%;top:50%;width:42px;height:42px;margin:-21px 0 0 -21px;flex:none;border-width:1px;opacity:0;pointer-events:none;
+  transform:translate(0,0) scale(.2);background:color-mix(in srgb,var(--overlay) 92%,transparent);border-color:var(--line2);box-shadow:0 8px 22px rgba(0,0,0,.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+#transport.orb.open::before{animation-play-state:paused;border-style:solid;opacity:.35}
+#transport.orb.open .tbtn:not(.play){opacity:1;pointer-events:auto;transform:translate(var(--x),var(--y)) scale(1);transition-delay:var(--d,0s)}
+#transport.orb .tbtn:not(.play):hover{transform:translate(var(--x),var(--y)) scale(1.12)}
+#transport.orb .tbtn:nth-child(1){--x:-104px;--y:0px;--d:0s}
+#transport.orb .tbtn:nth-child(2){--x:-93.7px;--y:-45.1px;--d:.03s}
+#transport.orb .tbtn:nth-child(3){--x:-64.8px;--y:-81.3px;--d:.06s}
+#transport.orb .tbtn:nth-child(4){--x:-23.1px;--y:-101.4px;--d:.09s}
+#transport.orb .tbtn:nth-child(6){--x:23.1px;--y:-101.4px;--d:.09s}
+#transport.orb .tbtn:nth-child(7){--x:64.8px;--y:-81.3px;--d:.06s}
+#transport.orb .tbtn:nth-child(8){--x:93.7px;--y:-45.1px;--d:.03s}
+#transport.orb .tbtn:nth-child(9){--x:104px;--y:0px;--d:0s}
+@keyframes orbSpin{to{transform:rotate(360deg)}}
+@keyframes orbBreath{0%,100%{transform:scale(.92);opacity:.45}50%{transform:scale(1.08);opacity:.85}}
+@keyframes orbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px) scale(1.03)}}
+@media (prefers-reduced-motion:reduce){#transport.orb::before,#transport.orb::after,#transport.orb .tbtn.play{animation:none}}
 </style>
 </head>
 <body data-theme="dark">
@@ -663,6 +703,17 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 
       <div><label class="lbl" for="translateSelect">Auto-translate pages</label>
         <select id="translateSelect"></select></div>
+
+      <div>
+        <div class="fix-head" style="margin-bottom:7px"><label class="lbl" style="margin:0">Smart Chinese gender</label><span class="badge new">NEW</span></div>
+        <div class="gpanel">
+          <label class="check-row"><input type="checkbox" id="gOn" checked> <b>Use she/her for women and he/him for men in the English translation</b></label>
+          <p class="hint">Chinese writes 他 and 她 the same sound, so translators often call every character “he”. This detects each character’s gender from 她/他, titles like 师姐 / 公子, and name cues — then uses she/her for women and he/him for men in the English translation. Add corrections below.</p>
+          <div class="gchips" id="gChips"></div>
+          <div class="grow"><input type="text" id="gName" placeholder="Name (e.g. Lin Xin)" spellcheck="false" autocomplete="off">
+            <button class="gbtn on" id="gShe" type="button">♀ she/her</button><button class="gbtn" id="gHe" type="button">♂ he/him</button><button class="gbtn" id="gAdd" type="button">+ Add</button></div>
+        </div>
+      </div>
 
       <div id="trExtra" hidden>
         <div><label class="lbl" for="translateStyle">Translation style</label>
@@ -954,7 +1005,7 @@ function speechTransform(text, baseOffset = 0){
 const DEFAULTS = {
   voiceURI:"auto", speechLang:"auto", rate:1, font:"Literata", size:19,
   highlight:"sentence+word", autoScroll:true, autoTranslate:"off",
-  translateStyle:"simple", translateEngine:"google",
+  translateStyle:"simple", translateEngine:"google", genderOn:true, genderFix:{},
   autoContinue:true, webAutoContinue:true, theme:"dark",
   skipEnabled:true, skipList:DEFAULT_SKIP, pronEnabled:true,
   pronRules:DEFAULT_PRON.map(([from,to]) => ({from, to, on:true}))
@@ -979,6 +1030,7 @@ const S = {
 const pos = {u:0};
 let gen = 0, renderGen = 0, voices = [], utStart = 0, boundaryTimer = null, editingRule = null;
 let hlFallbackTimer = null, lastBoundaryAt = 0, activeUtterance = null;
+let wdTimer = null, stallRetries = 0, wakeLock = null;
 let library = [], bookmarks = [];
 try{ library = JSON.parse(localStorage.getItem("upr.library") || "[]"); }catch(e){}
 try{ bookmarks = JSON.parse(localStorage.getItem("upr.bookmarks") || "[]"); }catch(e){}
@@ -1171,6 +1223,7 @@ function buildPages(){
   }
   if(cur.paras.length || !pages.length) pages.push(cur);
   S.pages = pages;
+  try{ gDetect(); }catch(e){}
 }
 function rebuildPageUnits(page){
   let sid = 0; page.units = []; page.words = 0; page.cum = [];
@@ -1491,7 +1544,7 @@ function speakUnit(retryAttempt){
   const g = gen;
   const u = currentUnit();
   if(!u){ chapterFinished(); return; }
-  stopHlFallback();
+  stopHlFallback(); clearTimeout(wdTimer);
   const {spoken, map} = speechTransform(u.text, u.start || 0);
   const fw = findWord(u.p, u.start, u);
   highlightUnit(u, fw ? fw.s : u.start);
@@ -1534,20 +1587,37 @@ function speakUnit(retryAttempt){
     highlightUnit(u, orig, false);
   };
   ut.onend = () => {
-    clearTimeout(boundaryTimer); stopHlFallback();
+    clearTimeout(boundaryTimer); stopHlFallback(); clearTimeout(wdTimer); stallRetries = 0;
     if(activeUtterance === ut) activeUtterance = null;
     if(g === gen) nextUnit();
   };
   ut.onerror = e => {
     clearTimeout(boundaryTimer); stopHlFallback();
     if(activeUtterance === ut) activeUtterance = null;
-    if(g !== gen || e.error === "interrupted" || e.error === "canceled") return;
+    clearTimeout(wdTimer);
+    if(g !== gen) return;
+    if(e.error === "interrupted" || e.error === "canceled"){
+      // the system (not the user) cut the speech off: retry, then move on
+      if(S.playing && !S.paused){
+        if(stallRetries++ < 2) setTimeout(() => { if(g === gen && S.playing && !S.paused) restartSpeech(); }, 250);
+        else { stallRetries = 0; nextUnit(); }
+      }
+      return;
+    }
     setStatus("Speech error: " + e.error);
     nextUnit();
   };
   try{ if(speechSynthesis.paused) speechSynthesis.resume(); }catch(e){}
   try{ speechSynthesis.speak(ut); }catch(e){ setStatus("Speech failed"); }
   setStatus("Reading");
+  // Watchdog: if the browser never says the sentence ended, recover instead of freezing.
+  const wd = () => {
+    if(g !== gen || !S.playing || S.paused) return;
+    if(fired && speechSynthesis.speaking && performance.now() - lastBoundaryAt < 5000){ wdTimer = setTimeout(wd, 2500); return; }
+    if(stallRetries++ < 1) restartSpeech();
+    else { stallRetries = 0; gen++; try{ speechSynthesis.cancel(); }catch(e){} setTimeout(() => { if(S.playing && !S.paused) nextUnit(); }, 150); }
+  };
+  wdTimer = setTimeout(wd, spoken.length * 120 / Math.max(0.5, S.settings.rate) + 7000);
   // Some Android builds drop the very first utterance without an error; retry once.
   if(isMobileSpeech && !retryAttempt){
     setTimeout(() => {
@@ -1606,7 +1676,7 @@ function togglePlay(){
   updateTransport(); restartSpeech();
 }
 function pausePlayback(){
-  S.paused = true;
+  S.paused = true; clearTimeout(wdTimer);
   try{ speechSynthesis.pause(); }catch(e){}
   if(!speechSynthesis.paused){ gen++; try{ speechSynthesis.cancel(); }catch(e){} S.needRespeak = true; }
   updateTransport(); setStatus("Paused");
@@ -1621,7 +1691,7 @@ function resumePlayback(){
   updateTransport(); setStatus("Reading");
 }
 function stopPlayback(){
-  gen++;
+  gen++; clearTimeout(wdTimer);
   stopHlFallback();
   activeUtterance = null;
   try{ speechSynthesis.cancel(); }catch(e){}
@@ -1649,10 +1719,57 @@ function updateTransport(){
   b.textContent = S.playing && !S.paused ? "⏸︎" : "▶︎";
   b.classList.toggle("playing", S.playing && !S.paused);
   b.title = S.playing && !S.paused ? "Pause" : "Play";
+  holdWake(S.playing && !S.paused);
+  if(S.playing && !S.paused) orbCollapse(); else orbExpand();
 }
+/* Orb mode: fold the dock into a sphere while reading; tap the sphere to fan the buttons around it. */
+let orbTimer = null;
+function orbCollapse(){
+  const t = $("transport");
+  if(t.classList.contains("orb") || t.classList.contains("folding")) return;
+  t.style.width = t.offsetWidth + "px";
+  t.classList.add("folding");
+  setTimeout(() => { if(S.playing && !S.paused) t.classList.add("orb"); }, 440);
+}
+function orbExpand(){
+  const t = $("transport"); clearTimeout(orbTimer);
+  if(!t.classList.contains("folding") && !t.classList.contains("orb")) return;
+  t.classList.remove("open", "orb"); t.style.width = "";
+  requestAnimationFrame(() => requestAnimationFrame(() => { if(!(S.playing && !S.paused)) t.classList.remove("folding"); }));
+}
+function orbOpen(on){
+  const t = $("transport"); clearTimeout(orbTimer);
+  t.classList.toggle("open", !!on);
+  if(on) orbTimer = setTimeout(() => orbOpen(false), 5000);
+}
+(function(){
+  const t = $("transport");
+  t.addEventListener("click", e => {
+    if(t.classList.contains("orb") && !t.classList.contains("open") && e.target.closest("#btnPlay")){
+      e.stopPropagation(); e.preventDefault(); orbOpen(true); return;
+    }
+    if(t.classList.contains("open")){
+      if(e.target.closest("#btnPages,#btnSettings,#btnBookmark")) setTimeout(() => orbOpen(false), 150);
+      else orbOpen(true);
+    }
+  }, true);
+  document.addEventListener("pointerdown", e => { if(t.classList.contains("open") && !t.contains(e.target)) orbOpen(false); });
+})();
+/* Keep the screen awake while reading, and restart speech if the phone silenced it in the background. */
+async function holdWake(on){
+  try{
+    if(on && "wakeLock" in navigator && !wakeLock){ wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => { wakeLock = null; }); }
+    else if(!on && wakeLock){ const w = wakeLock; wakeLock = null; await w.release(); }
+  }catch(e){ wakeLock = null; }
+}
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState !== "visible" || !S.playing || S.paused) return;
+  holdWake(true);
+  setTimeout(() => { if(S.playing && !S.paused && !speechSynthesis.speaking && !speechSynthesis.pending) restartSpeech(); }, 400);
+});
 setInterval(() => {
   try{
-    if(S.playing && !S.paused && speechSynthesis.speaking && !speechSynthesis.paused && performance.now() - utStart > 12000){
+    if(!isMobileSpeech && S.playing && !S.paused && speechSynthesis.speaking && !speechSynthesis.paused && performance.now() - utStart > 12000){
       speechSynthesis.pause(); speechSynthesis.resume(); utStart = performance.now();
     }
   }catch(e){}
@@ -3002,6 +3119,7 @@ function aiSystemPrompt(target, style){
     + "- Keep every character name, place name, title and honorific exactly as written.\n"
     + "- Keep the same number of paragraphs, and start each one with its number in square brackets, like [1].\n"
     + "- Stay aware of the scene: who is speaking, who is being spoken to, and how they feel.\n"
+    + (target === "English" ? genderPromptLine() : "")
     + "- Output only the numbered translation. No notes, no commentary, no title, no markdown.";
 }
 function parseNumbered(txt, n){
@@ -3096,6 +3214,7 @@ async function aiTranslatePage(page, key){
     p.display = polish(t, code, style, true);
     p.trKey = key;
   });
+  applyGenderPage(page);
   return res.length;
 }
 /* Quietly translate the next page while the reader is still on this one. */
@@ -3139,6 +3258,7 @@ async function translatePage(force){
   const engine = S.settings.translateEngine || "google";
   setStatus("Translating…");
   const token = progressShow(engine === "ai" ? "AI teacher is reading the page…" : "Translating…", 6, 94);
+  await ensureGender();
   let failed = 0;
 
   // 1. Try the AI teacher first (whole page + story context).
@@ -3194,6 +3314,7 @@ async function translatePage(force){
     });
   }
   if(renderGen !== myGen || S.pages[S.pageIdx] !== page){ progressAbort(token); return; }
+  applyGenderPage(page);
   rebuildPageUnits(page);
   renderPage();
   progressEnd("Translation ready", token);
@@ -3201,6 +3322,137 @@ async function translatePage(force){
   if(S.playing && !S.paused) restartSpeech();
   setStatus(S.playing ? "Reading" : "Ready");
   if(engine === "ai") scheduleAiPrefetch();
+}
+
+/* ================================================================
+   SMART CHINESE GENDER
+   ================================================================ */
+const ZH_SUR="赵钱孙李周吴郑王冯陈蒋沈韩杨朱秦许何吕施张孔曹严华金魏陶姜谢邹苏潘葛范彭鲁马苗方任袁柳史唐费薛雷贺倪汤罗郝安傅顾孟黄萧尹姚邵汪毛米明戴宋熊纪舒屈项董梁杜阮蓝季贾江郭林钟徐高夏蔡田胡凌霍万柯卢莫房解丁邓洪石崔龚程陆叶白楚宁云慕";
+const ZH_STOP="的了着是在看说道把被对向和与也都就还又不没有这那他她它我你们地得里中上下来去给让要会能很太更最将便才却但而及或为从到过起出入";
+const ZH_F_T="师姐|师妹|姑娘|小姐|夫人|仙子|姐姐|妹妹|女士|公主|娘娘|嫂子|奶奶|姨";
+const ZH_M_T="师兄|师弟|公子|少爷|先生|少侠|大哥|哥哥|弟弟|少主|王爷|大叔|爷爷|老爷";
+const ZH_F_C="雪云婷娜丽芳燕梅兰莲倩欣瑶琳玉珍凤月霞萍娟敏静怡婉柔娇媚";
+const ZH_M_C="伟强刚军勇杰峰龙虎辰宇浩轩鹏飞磊斌豪";
+let gAuto=[], gKey="", gNamesP=null, gSel="f", gFocus=null;
+
+/* Find character names in the Chinese text and guess each one's gender. */
+function detectGenders(text){
+  const re=new RegExp("(["+ZH_SUR+"])([\\u4e00-\\u9fff]{1,2})","g");
+  const ft=new RegExp("^("+ZH_F_T+")"), mt=new RegExp("^("+ZH_M_T+")");
+  const st={}; let m;
+  while((m=re.exec(text))){
+    let given=m[2]; const cut=[...given].findIndex(c=>ZH_STOP.includes(c));
+    if(cut===0){ re.lastIndex=m.index+1; continue; }
+    if(cut>0) given=given.slice(0,cut);
+    const name=m[1]+given, end=m.index+name.length; re.lastIndex=end;
+    const after=text.slice(end,end+14).split(/[。！？\n]/)[0];
+    const pr=after.search(/[她他]/);
+    // a 2-character given name may really be 1 character + the next word, so score both forms
+    for(const nm of new Set([name, m[1]+given[0]])){
+      const e=st[nm]||(st[nm]={zh:nm,n:0,s:0}); e.n++;
+      if(ft.test(after)) e.s+=2; else if(mt.test(after)) e.s-=2;
+      if(pr>=0) e.s+=after[pr]==="她"?1:-1;
+      const last=nm[nm.length-1];
+      if(ZH_F_C.includes(last)) e.s+=.4; if(ZH_M_C.includes(last)) e.s-=.4;
+    }
+  }
+  const kept=[];
+  for(const e of Object.values(st).filter(e=>e.n>=2&&Math.abs(e.s)>=1).sort((a,b)=>b.n-a.n||b.zh.length-a.zh.length)){
+    if(kept.some(k=>k.zh.startsWith(e.zh)||e.zh.startsWith(k.zh))) continue;
+    kept.push({zh:e.zh,n:e.n,g:e.s>0?"f":"m",en:""});
+  }
+  return kept.slice(0,14);
+}
+/* Get the English spelling of the names (so we can find them in the translation). */
+async function gNames(key){
+  const need=gAuto.filter(a=>!a.en); if(!need.length) return;
+  const list=need.map(a=>a.zh); let outs=[];
+  try{ outs=(await gtranslate(list.join("\n"),"en")).split(/\n+/).map(x=>x.trim()); }catch(e){}
+  if(outs.length!==list.length) outs=await Promise.all(list.map(z=>gtranslate(z,"en").catch(()=>"")));
+  if(key!==gKey) return;
+  need.forEach((a,i)=>{ const t=String(outs[i]||"").replace(/[^A-Za-z' -]/g,"").trim(); if(t) a.en=t.replace(/\b[a-z]/g,c=>c.toUpperCase()); });
+  renderGender();
+}
+async function ensureGender(){ if(gNamesP) try{ await gNamesP; }catch(e){} }
+function gDetect(){
+  const ch=S.book&&S.book.chapters[S.chapterIdx];
+  const key=S.book?S.book.id+":"+S.chapterIdx:"";
+  if(key===gKey) return; gKey=key;
+  gAuto=(S.settings.genderOn&&ch&&/[\u4e00-\u9fff]/.test(ch.text||""))?detectGenders(ch.text):[];
+  renderGender();
+  gNamesP=gAuto.length?gNames(key):null;
+}
+function gChips(){
+  const fix=S.settings.genderFix||{}, out=new Map();
+  for(const a of gAuto) if(a.en) out.set(a.en.toLowerCase(),{name:a.en,g:a.g});
+  for(const [k,v] of Object.entries(fix)){ const l=k.toLowerCase(); if(v==="x") out.delete(l); else out.set(l,{name:k,g:v}); }
+  return [...out.values()];
+}
+function gMap(){
+  const m=new Map(); if(!S.settings.genderOn) return m;
+  for(const c of gChips()) m.set(c.name.toLowerCase(),c.g);
+  return m;
+}
+/* Fix he/his/himself → she/her/herself when the nearest named character is a woman.
+   Cautious on purpose: mixed-gender sentences are left alone, and "him" is never touched. */
+function fixGenderText(t){
+  const m=gMap(); if(!m.size) return t;
+  const names=[...m.keys()].sort((a,b)=>b.length-a.length).map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  const re=new RegExp("\\b("+names.join("|")+")\\b|\\b(himself|his|he)\\b|[.!?]+[\"”’')]*(?=\\s|$)","gi");
+  let cur=new Set();
+  return t.replace(re,(s,nm,pr)=>{
+    if(nm){ cur.add(m.get(nm.toLowerCase())); return s; }
+    if(pr){
+      const ref=cur.size===1?[...cur][0]:cur.size===0?gFocus:null;
+      if(ref!=="f") return s;
+      const l=pr.toLowerCase(), w=l==="he"?"she":l==="his"?"her":"herself";
+      return pr[0]===pr[0].toUpperCase()?w[0].toUpperCase()+w.slice(1):w;
+    }
+    gFocus=cur.size===1?[...cur][0]:cur.size===0?gFocus:null; cur=new Set(); return s;
+  });
+}
+function applyGenderPage(page){
+  gFocus=null;
+  const on=S.settings.genderOn&&LANG_CODES[S.settings.autoTranslate]==="en";
+  for(const p of page.paras){
+    if(p.display==null) continue;
+    if(p.display!==p.gOut) p.gRaw=p.display;
+    p.display=on?fixGenderText(p.gRaw):p.gRaw; p.gOut=p.display;
+  }
+}
+function genderPromptLine(){
+  const c=gChips(); if(!S.settings.genderOn||!c.length) return "";
+  return "- Character genders — use exactly these pronouns, never guess: "+c.map(x=>x.name+" = "+(x.g==="f"?"she/her":"he/him")).join("; ")+".\n";
+}
+function renderGender(){
+  const box=$("gChips"); if(!box) return;
+  box.innerHTML=gChips().map(x=>`<span class="gchip"><i>${x.g==="f"?"♀":"♂"}</i>${esc(x.name)} → ${x.g==="f"?"she / her":"he / him"}<button type="button" data-gn="${esc(x.name)}" aria-label="Remove">×</button></span>`).join("")
+    ||'<span class="hint">Names appear here once the chapter has Chinese text with 她 / 他 or titles.</span>';
+  $("gOn").checked=!!S.settings.genderOn;
+  $("gShe").classList.toggle("on",gSel==="f"); $("gHe").classList.toggle("on",gSel==="m");
+}
+function gRefresh(){
+  renderGender();
+  const page=S.pages[S.pageIdx]; if(!page) return;
+  applyGenderPage(page); rebuildPageUnits(page);
+  pos.u=clamp(pos.u,0,Math.max(0,page.units.length-1)); renderPage();
+  if(S.playing&&!S.paused) restartSpeech();
+}
+function initGender(){
+  const fixOf=()=>S.settings.genderFix=S.settings.genderFix||{};
+  $("gOn").onchange=e=>{ S.settings.genderOn=e.target.checked; saveSettings(); gKey=""; gDetect(); gRefresh(); };
+  $("gShe").onclick=()=>{ gSel="f"; renderGender(); };
+  $("gHe").onclick=()=>{ gSel="m"; renderGender(); };
+  const add=()=>{ const v=$("gName").value.trim(); if(!v) return; fixOf()[v]=gSel; $("gName").value=""; saveSettings(); gRefresh(); };
+  $("gAdd").onclick=add;
+  $("gName").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } };
+  $("gChips").onclick=e=>{
+    const b=e.target.closest("[data-gn]"); if(!b) return;
+    const n=b.dataset.gn, fix=fixOf();
+    for(const k of Object.keys(fix)) if(k.toLowerCase()===n.toLowerCase()) delete fix[k];
+    if(gAuto.some(a=>a.en&&a.en.toLowerCase()===n.toLowerCase())) fix[n]="x";
+    saveSettings(); gRefresh();
+  };
 }
 
 /* ================================================================
@@ -3452,6 +3704,7 @@ function init(){
   $("pronToggle").checked = S.settings.pronEnabled;
   $("webAutoContinue").checked = S.settings.webAutoContinue;
   renderRules();
+  initGender(); renderGender();
   loadVoices();
   if(ttsOK) speechSynthesis.onvoiceschanged = loadVoices;
 
