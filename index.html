@@ -740,6 +740,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const uid = () => 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const ttsOK = 'speechSynthesis' in window;
+const isMobileSpeech = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
 const PAGE_WORDS = 420;
 const synth = window.speechSynthesis;
 
@@ -890,13 +891,14 @@ const S = {
 };
 const pos = {u:0};
 let gen = 0, renderGen = 0, voices = [], utStart = 0, boundaryTimer = null, editingRule = null;
+let hlFallbackTimer = null, lastBoundaryAt = 0, activeUtterance = null;
 let library = [], bookmarks = [];
 try{ library = JSON.parse(localStorage.getItem("upr.library") || "[]"); }catch(e){}
 try{ bookmarks = JSON.parse(localStorage.getItem("upr.bookmarks") || "[]"); }catch(e){}
 function saveLibrary(){ try{ localStorage.setItem("upr.library", JSON.stringify(library)); }catch(e){ toast("Storage is full — this book is kept for this session only."); } }
 function saveBookmarks(){ try{ localStorage.setItem("upr.bookmarks", JSON.stringify(bookmarks)); }catch(e){} }
 function saveProgress(){
-  if(!S.book || S.book.source === "web") return;
+  if(!S.book) return;
   try{
     const p = JSON.parse(localStorage.getItem("upr.progress") || "{}");
     p[S.book.id] = {ch:S.chapterIdx, page:S.pageIdx};
@@ -1073,9 +1075,13 @@ function renderChaptersList(){
   const el = $("chaptersList");
   if(!S.book){ el.innerHTML = '<p class="hint">Open a book or read a web page first.</p>'; return; }
   if(S.book.source === "web"){
-    el.innerHTML = `<button class="list-item active"><div class="li-main"><b>${esc(S.book.title || "Current page")}</b><span>${esc(S.book.webUrl || "")}</span></div></button>`
-      + (S.book.webPrevUrl ? `<button class="list-item" data-webnav="prev"><div class="li-main"><b>‹ Previous chapter</b><span>${esc(S.book.webPrevUrl)}</span></div></button>` : "")
-      + (S.book.webNextUrl ? `<button class="list-item" data-webnav="next"><div class="li-main"><b>Next chapter ›</b><span>${esc(S.book.webNextUrl)}</span></div></button>` : "");
+    const chs = S.book.chapters || [];
+    el.innerHTML = chs.map((c, i) =>
+      `<button class="list-item ${i === S.chapterIdx ? "active" : ""}" data-ch="${i}">
+        <div class="li-main"><b>${esc(c.title || ("Chapter " + (i + 1)))}</b><span>${countWords(c.text || "")} words</span></div>
+        ${i === S.chapterIdx ? '<span class="badge">NOW</span>' : ""}</button>`).join("")
+      + (S.book.webPrevUrl ? `<button class="list-item" data-webnav="prev"><div class="li-main"><b>‹ Previous chapter</b><span>Load from website</span></div></button>` : "")
+      + (S.book.webNextUrl ? `<button class="list-item" data-webnav="next"><div class="li-main"><b>Next chapter ›</b><span>Load from website</span></div></button>` : "");
   } else {
     el.innerHTML = S.book.chapters.map((c, i) =>
       `<button class="list-item ${i === S.chapterIdx ? "active" : ""}" data-ch="${i}">
@@ -1088,9 +1094,10 @@ function updateChapterBar(){
   if(!S.book){ row.hidden = true; return; }
   row.hidden = false;
   if(S.book.source === "web"){
-    $("chTitle").textContent = S.book.title || "Chapter";
-    $("btnPrevCh").disabled = !S.book.webPrevUrl;
-    $("btnNextCh").disabled = !S.book.webNextUrl;
+    const ch = S.book.chapters[S.chapterIdx];
+    $("chTitle").textContent = (ch && ch.title) || S.book.title || "Chapter";
+    $("btnPrevCh").disabled = !(S.book.webPrevUrl || S.chapterIdx > 0);
+    $("btnNextCh").disabled = !(S.book.webNextUrl || S.chapterIdx < S.book.chapters.length - 1);
   } else {
     const ch = S.book.chapters[S.chapterIdx];
     $("chTitle").textContent = ch ? ch.title : "Chapter";
@@ -1216,15 +1223,57 @@ function currentUnit(){
   const page = S.pages[S.pageIdx];
   return page && page.units[pos.u] || null;
 }
+function stopHlFallback(){
+  if(hlFallbackTimer){ clearTimeout(hlFallbackTimer); hlFallbackTimer = null; }
+}
+/* Android Chrome normally sends no word-boundary events. Estimate the word
+   being spoken from elapsed time so the highlight keeps moving there too. */
+function startHlFallback(u, g){
+  stopHlFallback();
+  if(!isMobileSpeech) return;
+  if(!["word","sentence+word","paragraph+word"].includes(S.settings.highlight)) return;
+  const ws = wordSpans(u.text || "");
+  if(ws.length < 2) return;
+  const rate = Math.max(0.5, S.settings.rate) || 1;
+  const t0 = performance.now();
+  let acc = 0;
+  const starts = ws.map(w => {
+    const s = acc;
+    acc += Math.max(130, (w.e - w.s) * 62 / rate);
+    return s;
+  });
+  let lastIdx = -1;
+  const tick = () => {
+    if(g !== gen || !S.playing || S.paused) return;
+    if(performance.now() - lastBoundaryAt > 900){
+      const elapsed = performance.now() - t0;
+      let i = 0;
+      while(i + 1 < ws.length && starts[i + 1] <= elapsed) i++;
+      if(i !== lastIdx){
+        lastIdx = i;
+        highlightUnit(u, (u.start || 0) + ws[i].s, false);
+      }
+    }
+    hlFallbackTimer = setTimeout(tick, 120);
+  };
+  hlFallbackTimer = setTimeout(tick, 250);
+}
 function restartSpeech(){
   gen++; const g = gen;
-  try{ speechSynthesis.cancel(); }catch(e){}
-  setTimeout(() => { if(g === gen && S.playing && !S.paused) speakUnit(); }, 60);
+  stopHlFallback();
+  clearTimeout(boundaryTimer);
+  const active = speechSynthesis.speaking || speechSynthesis.pending;
+  try{ if(active) speechSynthesis.cancel(); }catch(e){}
+  const start = () => { if(g === gen && S.playing && !S.paused) speakUnit(); };
+  // Speaking straight from the tap keeps Android's speech engine happy.
+  if(active) setTimeout(start, isMobileSpeech ? 260 : 60);
+  else start();
 }
-function speakUnit(){
+function speakUnit(retryAttempt){
   const g = gen;
   const u = currentUnit();
   if(!u){ chapterFinished(); return; }
+  stopHlFallback();
   const {spoken, map} = speechTransform(u.text, u.start || 0);
   const fw = findWord(u.p, u.start, u);
   highlightUnit(u, fw ? fw.s : u.start);
@@ -1233,11 +1282,15 @@ function speakUnit(){
   const ut = new SpeechSynthesisUtterance(spoken);
   applyVoice(ut);
   ut.rate = S.settings.rate;
+  let started = false;
   let fired = false;
   let maxCharIdx = -1;
+  activeUtterance = ut; // keep a reference so it isn't garbage-collected mid-speech
   ut.onstart = () => {
     if(g !== gen) return;
+    started = true;
     utStart = performance.now();
+    lastBoundaryAt = performance.now();
     clearTimeout(boundaryTimer);
     boundaryTimer = setTimeout(() => {
       if(g !== gen || fired) return;
@@ -1247,6 +1300,7 @@ function speakUnit(){
         curHlS = sEl;
       }
     }, 900);
+    startHlFallback(u, g);
   };
   ut.onboundary = e => {
     if(g !== gen || e.charIndex == null) return;
@@ -1256,19 +1310,36 @@ function speakUnit(){
     if(e.charIndex < maxCharIdx) return;
     maxCharIdx = e.charIndex;
     fired = true;
+    lastBoundaryAt = performance.now();
     clearTimeout(boundaryTimer);
     const orig = map.length ? map[clamp(e.charIndex, 0, map.length - 1)] : (u.start || 0);
     highlightUnit(u, orig, false);
   };
-  ut.onend = () => { clearTimeout(boundaryTimer); if(g === gen) nextUnit(); };
+  ut.onend = () => {
+    clearTimeout(boundaryTimer); stopHlFallback();
+    if(activeUtterance === ut) activeUtterance = null;
+    if(g === gen) nextUnit();
+  };
   ut.onerror = e => {
-    clearTimeout(boundaryTimer);
+    clearTimeout(boundaryTimer); stopHlFallback();
+    if(activeUtterance === ut) activeUtterance = null;
     if(g !== gen || e.error === "interrupted" || e.error === "canceled") return;
     setStatus("Speech error: " + e.error);
     nextUnit();
   };
+  try{ if(speechSynthesis.paused) speechSynthesis.resume(); }catch(e){}
   try{ speechSynthesis.speak(ut); }catch(e){ setStatus("Speech failed"); }
   setStatus("Reading");
+  // Some Android builds drop the very first utterance without an error; retry once.
+  if(isMobileSpeech && !retryAttempt){
+    setTimeout(() => {
+      if(g !== gen || started || !S.playing || S.paused) return;
+      try{ speechSynthesis.cancel(); }catch(e){}
+      setTimeout(() => {
+        if(g === gen && S.playing && !S.paused && !started) speakUnit(true);
+      }, 280);
+    }, 1200);
+  }
 }
 function nextUnit(){
   pos.u++;
@@ -1285,10 +1356,24 @@ async function chapterFinished(){
       loadChapter(S.chapterIdx + 1, {autoplay:true});
       return;
     }
-    if(S.book && S.book.source === "web" && S.book.webNextUrl){
-      toast("Continuing to the next web chapter…");
-      await loadWebBook(S.book.webNextUrl, {autoplay:true});
-      return;
+    if(S.book && S.book.source === "web"){
+      const next = S.book.webNextUrl;
+      if(next){
+        const idx = S.book.chapters.findIndex(c => sameUrl(c.url, next));
+        if(idx >= 0){
+          toast("Continuing to the next chapter…");
+          loadChapter(idx, {autoplay:true});
+        } else {
+          toast("Continuing to the next web chapter…");
+          await loadWebBook(next, {autoplay:true, keepId: S.book.id});
+        }
+        return;
+      }
+      if(S.chapterIdx + 1 < S.book.chapters.length){
+        toast("Continuing to the next chapter…");
+        loadChapter(S.chapterIdx + 1, {autoplay:true});
+        return;
+      }
     }
   }
   S.playing = false; S.paused = false;
@@ -1319,6 +1404,8 @@ function resumePlayback(){
 }
 function stopPlayback(){
   gen++;
+  stopHlFallback();
+  activeUtterance = null;
   try{ speechSynthesis.cancel(); }catch(e){}
   S.playing = false; S.paused = false; S.needRespeak = false;
   clearHighlights(); updateTransport(); setStatus("Ready"); updateStats();
@@ -1380,24 +1467,90 @@ function webNovelKey(url){
       const p = u.pathname.replace(/(?:\/)?(?:chapter|chap|ch)[-_\/]?\d+[^\/]*$/i, '/');
       return u.origin + p;
     }
+    // Numeric chapter pages such as /novel/name/12345
+    const parts = u.pathname.split('/').filter(Boolean);
+    const last = parts[parts.length - 1] || '';
+    const novelish = parts.slice(0, -1).some(p => /^(novel|novels|book|books|read|reading|story|stories|fiction|series)$/i.test(p));
+    if(novelish && parts.length >= 3 && /\d/.test(last)){
+      return u.origin + '/' + parts.slice(0, -1).join('/') + '/';
+    }
   }catch(_){}
   return url;
 }
-/* Keep web pages in the Library. keepId updates the entry that is already being
-   read, so moving to the next/previous web chapter doesn't create duplicates. */
+function sameUrl(a, b){
+  if(!a || !b) return false;
+  if(a === b) return true;
+  try{
+    const x = new URL(a, location.href), y = new URL(b, location.href);
+    return x.origin === y.origin
+      && x.pathname.replace(/\/+$/, "") === y.pathname.replace(/\/+$/, "")
+      && x.search === y.search;
+  }catch(_){ return false; }
+}
+function webChapterTitle(parsed, url){
+  const page = safeTitle(parsed.pageTitle || "");
+  let m = /(?:chapter|chap|ch\.?|episode|part|book|volume)\s*[\d.]+[^\n|]*/i.exec(page);
+  if(!m) m = /第\s*[\d一二三四五六七八九十百千零]+\s*[章节回卷][^\n|]*/.exec(page);
+  let t = m ? m[0] : "";
+  // Drop the site name that follows the chapter title.
+  t = t.replace(/\s*[|·•]\s*[^|·•]*$/, "").trim();
+  const tail = /^(.*?)\s+[-–—]\s+([^-–—]+)$/.exec(t);
+  const SITE_SUFFIX = /^(free\s*web\s*novel|web\s*novel|light\s*novel(?:\s*world)?|novel\s*bin|read\s*novel\w*|webnovel|wuxiaworld|wtr-lab|scribble\s*hub|royal\s*road|novelupdates)$/i;
+  if(tail && SITE_SUFFIX.test(tail[2].trim())) t = tail[1];
+  t = safeTitle(t.replace(/[\s\-–—:|]+$/, "").trim());
+  if(t) return t;
+  const n = /(?:chapter|chap|ch)[-_\/]?(\d+)/i.exec(url || "");
+  if(n) return "Chapter " + n[1];
+  return safeTitle(parsed.title || "Chapter");
+}
+function syncWebChapter(){
+  if(!S.book || S.book.source !== "web") return;
+  const ch = S.book.chapters && S.book.chapters[S.chapterIdx];
+  if(!ch) return;
+  if(ch.url) S.book.webUrl = ch.url;
+  if(ch.next != null) S.book.webNextUrl = ch.next;
+  if(ch.prev != null) S.book.webPrevUrl = ch.prev;
+}
+/* Keep every web chapter in one Library entry instead of replacing the page. */
 function persistWebBook(book, keepId){
   let existing = keepId ? library.find(b => b.id === keepId) : library.find(b => b.id === book.id);
   if(!existing && book.webUrl){
     const key = webNovelKey(book.webUrl);
     existing = library.find(b => b.source === "web" && b.webUrl && webNovelKey(b.webUrl) === key);
   }
-  if(existing){
-    Object.assign(existing, book, {id: existing.id, added: existing.added});
-    saveLibrary();
-    return existing;
+  const chapter = Object.assign({}, (book.chapters && book.chapters[0]) || {});
+  chapter.title = chapter.title || book.title || "Chapter";
+  chapter.text = chapter.text || "";
+  chapter.url = book.webUrl || chapter.url || "";
+  chapter.next = book.webNextUrl || "";
+  chapter.prev = book.webPrevUrl || "";
+  if(!existing){
+    book.chapters = [chapter];
+    library.unshift(book); saveLibrary();
+    return {book, chapterIdx: 0};
   }
-  library.unshift(book); saveLibrary();
-  return book;
+  // Older versions stored a single page per entry — give that page a URL too.
+  existing.chapters = existing.chapters || [];
+  if(existing.chapters.length && !existing.chapters.some(c => c.url)){
+    existing.chapters[0].url = existing.webUrl || "";
+    existing.chapters[0].next = existing.chapters[0].next || existing.webNextUrl || "";
+    existing.chapters[0].prev = existing.chapters[0].prev || existing.webPrevUrl || "";
+  }
+  let idx = existing.chapters.findIndex(c => sameUrl(c.url, chapter.url));
+  if(idx < 0 && chapter.url) idx = existing.chapters.findIndex(c => !c.url && c.title === chapter.title);
+  if(idx >= 0){
+    const old = existing.chapters[idx];
+    existing.chapters[idx] = Object.assign({}, old, chapter, {url: chapter.url || old.url});
+  } else {
+    existing.chapters.push(chapter);
+    idx = existing.chapters.length - 1;
+  }
+  existing.webUrl = chapter.url || existing.webUrl;
+  existing.webNextUrl = chapter.next || "";
+  existing.webPrevUrl = chapter.prev || "";
+  if(!existing.title || /^(untitled|new tab)$/i.test(existing.title)) existing.title = book.title;
+  saveLibrary();
+  return {book: existing, chapterIdx: idx};
 }
 function openBook(id, opts = {}){
   const book = library.find(b => b.id === id);
@@ -1411,6 +1564,7 @@ function openBook(id, opts = {}){
   } else {
     S.chapterIdx = opts.resume === false ? 0 : clamp(prog.ch || 0, 0, book.chapters.length - 1);
   }
+  syncWebChapter();
   buildPages();
   S.pageIdx = opts.resume === false ? 0 : clamp(prog.page || 0, 0, S.pages.length - 1);
   pos.u = 0;
@@ -1420,11 +1574,11 @@ function openBook(id, opts = {}){
   if(opts.autoplay){ S.playing = true; updateTransport(); restartSpeech(); }
 }
 function loadChapter(i, opts = {}){
-  if(!S.book || S.book.source === "web") return;
+  if(!S.book) return;
   i = clamp(i, 0, S.book.chapters.length - 1);
   const wasPlaying = opts.autoplay || (S.playing && !S.paused);
   gen++; try{ speechSynthesis.cancel(); }catch(e){}
-  S.chapterIdx = i; buildPages(); S.pageIdx = 0; pos.u = 0;
+  S.chapterIdx = i; syncWebChapter(); buildPages(); S.pageIdx = 0; pos.u = 0;
   renderPage(); saveProgress();
   $("readerCard").scrollIntoView({behavior:"smooth", block:"start"});
   if(wasPlaying){ S.playing = true; S.paused = false; updateTransport(); restartSpeech(); }
@@ -1551,8 +1705,14 @@ function addBookmark(){
 async function goBookmark(b){
   closeModals();
   if(b.source === "web" && b.url){
-    await loadWebBook(b.url, {keepId: b.bookId});
-    if(S.book && S.book.webUrl === b.url){
+    const bk = library.find(x => x.id === b.bookId);
+    const idx = bk ? bk.chapters.findIndex(c => sameUrl(c.url, b.url)) : -1;
+    if(idx >= 0){
+      openBook(b.bookId, {chapterIdx: idx, resume: false});
+    } else {
+      await loadWebBook(b.url, {keepId: b.bookId});
+    }
+    if(S.book && sameUrl(S.book.webUrl, b.url)){
       S.pageIdx = clamp(b.page, 0, S.pages.length - 1); pos.u = b.u || 0;
       renderPage(); const u = currentUnit(); if(u) highlightUnit(u, u.start);
       $("readerCard").scrollIntoView({behavior:"smooth"});
@@ -1951,14 +2111,32 @@ function parseWebHtml(html, baseUrl){
   if(text && !text.slice(0, 200).toLowerCase().includes(title.toLowerCase().slice(0, 30))) text = title + '\n\n' + text;
   return { title, pageTitle, text, next: nav.next, prev: nav.prev, chapterLinks, loginUrl };
 }
+/* Fallback when a reader service returns Markdown instead of HTML. */
+function parseMarkdownPage(md, baseUrl){
+  const host = new URL(baseUrl).hostname.replace(/^www\./, '');
+  const title = safeTitle((md.match(/^Title:\s*(.+)$/mi) || [])[1] || host) || host;
+  let body = md.split(/Markdown Content:\s*/i).pop() || md;
+  body = body
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/[*_`~]{1,3}/g, '');
+  let text = cleanLines(body.replace(/\r/g, ''), host);
+  if(text && !text.slice(0, 200).toLowerCase().includes(title.toLowerCase().slice(0, 30))) text = title + '\n\n' + text;
+  return { title, pageTitle: title, text, next: '', prev: '', chapterLinks: [], loginUrl: '' };
+}
 
 /* Multi-source fetch with racing (first good answer wins) */
 const WEB_SOURCES = [
-  { name: 'direct', build: u => u },
-  { name: 'proxy 1', build: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) },
-  { name: 'proxy 2', build: u => 'https://corsproxy.io/?' + encodeURIComponent(u) },
-  { name: 'proxy 3', build: u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u) },
-  { name: 'rendered page', build: u => 'https://r.jina.ai/' + u, headers: { 'X-Return-Format': 'html' } }
+  { name: 'direct', build: u => u, timeout: 9000 },
+  // Jina Reader renders the page server-side and is the most reliable fallback.
+  { name: 'rendered page', build: u => 'https://r.jina.ai/' + u, headers: { 'X-Return-Format': 'html' }, timeout: 35000 },
+  { name: 'proxy 1', build: u => 'https://cors-get-proxy.sirjosh.workers.dev/?url=' + encodeURIComponent(u), timeout: 16000, delay: 500 },
+  { name: 'proxy 2', build: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), timeout: 16000, delay: 800 },
+  { name: 'proxy 3', build: u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u), timeout: 16000, delay: 1100 },
+  { name: 'proxy 4', build: u => 'https://corsproxy.io/?url=' + encodeURIComponent(u), timeout: 12000, delay: 1400 },
+  { name: 'proxy 5', build: u => 'https://cors.isomorphic-git.org/' + u, timeout: 16000, delay: 1700 },
+  { name: 'proxy 6', build: u => 'https://test.cors.workers.dev/?' + u, timeout: 16000, delay: 2000 }
 ];
 const webCache = new Map();
 function cachePage(url, value){
@@ -1972,13 +2150,15 @@ function fetchPageHtml(url, say, { strict = true } = {}){
   let finished = false;
   const attempt = async src => {
     const ctl = new AbortController(); controllers.push(ctl);
-    const timer = setTimeout(() => ctl.abort(), 12000);
+    const timer = setTimeout(() => ctl.abort(), src.timeout || 16000);
     try{
       const res = await fetch(src.build(url), { ...(src.headers ? { headers: src.headers } : {}), signal: ctl.signal });
       if(!res.ok) throw new Error('HTTP ' + res.status);
       const body = await res.text();
-      if(!/<(html|body|p|div)[\s>]/i.test(body)) throw new Error('not a web page');
-      const parsed = parseWebHtml(body, url);
+      let parsed;
+      if(/<(html|body|p|div)[\s>]/i.test(body)) parsed = parseWebHtml(body, url);
+      else if(/Markdown Content:/i.test(body)) parsed = parseMarkdownPage(body, url);
+      else throw new Error('not a web page');
       const blocked = /just a moment|cf-browser-verification|enable javascript and cookies|attention required/i.test(body.slice(0, 4000));
       if(blocked && parsed.text.length < 600) throw new Error('blocked by bot protection');
       if(strict){ if(parsed.text.length < 200 && parsed.chapterLinks.length < 5) throw new Error('no readable text'); }
@@ -1989,7 +2169,7 @@ function fetchPageHtml(url, say, { strict = true } = {}){
     }finally{ clearTimeout(timer); }
   };
   const runs = WEB_SOURCES.map(src =>
-    new Promise(r => setTimeout(r, src.name === 'rendered page' ? 4000 : 0))
+    new Promise(r => setTimeout(r, src.delay || 0))
       .then(() => finished ? Promise.reject(new Error(src.name + ': skipped')) : attempt(src))
   );
   return Promise.any(runs).then(result => {
@@ -2128,16 +2308,17 @@ async function readWebPageAsBook(opts = {}){
       tab.web.parsed = parsed;
       tab.web.next = tab.web.next || parsed.next || guessSiblingChapter(tab.url, +1);
       tab.web.prev = tab.web.prev || parsed.prev || guessSiblingChapter(tab.url, -1);
-    }catch(e){ toast('Could not get readable text: ' + e.message); return; }
+    }catch(e){ setStatus('Ready'); webMsg('Could not get the readable text. Try Live view or paste the chapter.'); toast('Could not get readable text: ' + e.message); return; }
   }
   if(!parsed.text || parsed.text.length < 60){
     toast('Not enough text on that page to read.');
     return;
   }
   const id = 'web:' + tab.url;
+  const chapterTitle = webChapterTitle(parsed, tab.url);
   const book = {
-    id, title: parsed.title, source: 'web',
-    chapters: [{ title: parsed.title, text: parsed.text }],
+    id, title: parsed.title || chapterTitle, source: 'web',
+    chapters: [{ title: chapterTitle, text: parsed.text }],
     webUrl: tab.url,
     webNextUrl: tab.web.next || '',
     webPrevUrl: tab.web.prev || '',
@@ -2152,26 +2333,32 @@ async function loadWebBook(url, opts = {}){
   if(!normalized){ toast('Invalid URL.'); return; }
   try{
     const { parsed } = await fetchPageHtml(normalized, (m) => setStatus(m), { strict: false });
-    if(!parsed.text || parsed.text.length < 60){ toast('Not enough text on that page.'); return; }
+    if(!parsed.text || parsed.text.length < 60){ setStatus('Ready'); toast('Not enough text on that page.'); return; }
+    const chapterTitle = webChapterTitle(parsed, normalized);
     const book = {
-      id: 'web:' + normalized, title: parsed.title, source: 'web',
-      chapters: [{ title: parsed.title, text: parsed.text }],
+      id: 'web:' + normalized, title: parsed.title || chapterTitle, source: 'web',
+      chapters: [{ title: chapterTitle, text: parsed.text }],
       webUrl: normalized,
       webNextUrl: parsed.next || guessSiblingChapter(normalized, +1) || '',
       webPrevUrl: parsed.prev || guessSiblingChapter(normalized, -1) || '',
       added: Date.now()
     };
     await openWebBookObject(book, opts);
-  }catch(e){ toast('Could not load page: ' + e.message); }
+  }catch(e){
+    setStatus('Ready');
+    toast('Could not load page. Try again, or paste the chapter text with 📋. (' + e.message + ')');
+  }
 }
 
 function openWebBookObject(book, opts = {}){
   stopPlayback();
-  book = persistWebBook(book, opts.keepId);
-  S.book = book; S.mode = 'reader';
-  S.chapterIdx = 0; buildPages(); S.pageIdx = 0; pos.u = 0;
-  $('docSub').textContent = book.title;
-  renderPage(); switchPane('reader');
+  const saved = persistWebBook(book, opts.keepId);
+  S.book = saved.book; S.mode = 'reader';
+  S.chapterIdx = saved.chapterIdx;
+  syncWebChapter();
+  buildPages(); S.pageIdx = 0; pos.u = 0;
+  $('docSub').textContent = S.book.title;
+  renderPage(); saveProgress(); switchPane('reader');
   if(opts.autoplay && ttsOK){ S.playing = true; updateTransport(); restartSpeech(); }
 }
 
@@ -2181,9 +2368,17 @@ function openSignInWindow(url){
 }
 async function goToWebChapter(dir){
   if(!S.book || S.book.source !== 'web') return;
-  const url = dir === 'next' ? S.book.webNextUrl : S.book.webPrevUrl;
-  if(!url){ toast('No ' + dir + ' chapter found.'); return; }
-  await loadWebBook(url, {autoplay: S.playing && !S.paused, keepId: S.book.id});
+  const ch = S.book.chapters[S.chapterIdx];
+  const url = dir === 'next' ? ((ch && ch.next) || S.book.webNextUrl) : ((ch && ch.prev) || S.book.webPrevUrl);
+  const autoplay = S.playing && !S.paused;
+  if(!url){
+    const stored = dir === 'next' ? S.chapterIdx + 1 : S.chapterIdx - 1;
+    if(stored >= 0 && stored < S.book.chapters.length){ loadChapter(stored, {autoplay}); return; }
+    toast('No ' + dir + ' chapter found.'); return;
+  }
+  const idx = S.book.chapters.findIndex(c => sameUrl(c.url, url));
+  if(idx >= 0 && idx !== S.chapterIdx){ loadChapter(idx, {autoplay}); return; }
+  await loadWebBook(url, {autoplay, keepId: S.book.id});
 }
 
 /* ================================================================
