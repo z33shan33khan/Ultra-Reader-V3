@@ -576,6 +576,9 @@ body.pip-window #readingHud{top:10px}
 .hud-fill.ch{background:linear-gradient(90deg,var(--amber2),var(--amber))}
 body.cinema #hudProgress{background:color-mix(in srgb,#000 74%,transparent);border-color:color-mix(in srgb,var(--amber) 28%,transparent);box-shadow:0 8px 26px rgba(0,0,0,.6)}
 body.pip-window #hudProgress{top:44px}
+/* While a book is open, keep the page content clear of the fixed HUD + progress strip
+   so the tabs and controls behind them stay visible at the top of the page. */
+body.book-open main{padding-top:84px}
 
 /* ---------- Reading environment: cinema lights-off, full screen, pop-out ---------- */
 header,.mode-row,#chapterRow,#autoRow,#statsRow,#progressRow,#cinemaRow,footer{transition:opacity .5s ease,filter .5s ease}
@@ -1990,6 +1993,7 @@ setInterval(() => {
 function syncHud(){
   const hud = $("readingHud"); if(!hud) return;
   hud.hidden = !S.book;
+  document.body.classList.toggle("book-open", !!S.book);
   if(!S.book) return;
   const set = (id, v) => { const n = $(id); if(n && n.textContent !== v) n.textContent = v; };
   set("hudTitle", S.book.title || "Untitled");
