@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14100a">
+<meta name="theme-color" content="#050505">
 <title>Ultra Pro Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
 </script>
 <style>
 :root, [data-theme="dark"]{
-  --bg:#14100a; --bg2:#1a1610; --surface:#1f1a13; --surface2:#282118; --overlay:#2f281e;
+  --bg:#050505; --bg2:#1a1610; --surface:#1f1a13; --surface2:#282118; --overlay:#2f281e;
   --line:#3c3325; --line2:#52462f;
   --text:#f0e8d6; --muted:#b4a88f; --faint:#877b64;
   --amber:#e8a83e; --amber2:#f6c968; --amber-deep:#b97c1c; --amber-dim:#7a5a26;
@@ -66,7 +66,7 @@ header{
   position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;
   padding:12px 20px;border-bottom:1px solid var(--line);
   background:color-mix(in srgb, var(--bg) 78%, transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  animation:fadeDown .5s ease both;
+  animation:fadeDown .5s ease both;transition:height .35s ease,padding .35s ease,border-width .35s ease,opacity .35s ease;
 }
 .logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:22px;flex:none;
   background:linear-gradient(135deg,var(--surface2),var(--overlay));border:1px solid var(--line2);
@@ -132,14 +132,15 @@ main{max-width:980px;margin:0 auto;padding:18px 18px 130px;display:flex;flex-dir
 .speed-dial button:hover{border-color:var(--amber);transform:translateY(-1px);box-shadow:0 4px 14px var(--glow)}
 .speed-dial .sd-icon{font-size:24px}
 .reader-card{
-  background:var(--reader-paper);border:1px solid var(--line);border-radius:18px;
+  --reading-bg:#050505;--reading-text:#fff;
+  background:var(--reading-bg);border:1px solid var(--line);border-radius:18px;
   padding:44px 48px;box-shadow:0 18px 50px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
   animation:fadeUp .55s .2s ease both;position:relative;overflow:hidden;
   scroll-margin-top:calc(var(--headerH,66px) + 64px);
 }
 .reader-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),var(--jade),var(--cinnabar));opacity:.75}
-#chapterHeading{font-family:'Literata',serif;font-size:24px;font-weight:600;margin-bottom:22px;line-height:1.35;color:var(--text)}
-#content{font-family:'Literata',Georgia,serif;font-size:19px;line-height:1.88;color:var(--text)}
+#chapterHeading{font-family:'Literata',serif;font-size:24px;font-weight:600;margin-bottom:22px;line-height:1.35;color:var(--reading-text)}
+#content{font-family:'Literata',Georgia,serif;font-size:19px;line-height:1.88;color:var(--reading-text)}
 #content p{margin:0 0 1.15em;border-left:3px solid transparent;padding-left:10px;margin-left:-13px;border-radius:4px;transition:background .25s,border-color .25s}
 #content p:last-child{margin-bottom:0}
 #content .sent{border-radius:4px;transition:background .15s ease, box-shadow .15s ease;padding:2px 3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
@@ -150,7 +151,9 @@ main{max-width:980px;margin:0 auto;padding:18px 18px 130px;display:flex;flex-dir
 #content .hl-w{background:var(--hl-word);box-shadow:0 0 0 2px var(--hl-word);border-radius:3px;font-weight:600}
 #content .hl-s{background:var(--hl-sent);box-shadow:0 0 0 3px var(--hl-sent);border-radius:4px}
 #content p.hl-p{background:var(--hl-para);border-left-color:var(--jade)}
-#content .empty{color:var(--faint);font-style:italic}
+#content .empty{color:var(--reading-text);opacity:.65;font-style:italic}
+.reader-color-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.reader-color-pair input[type=color]{width:100%;height:38px;padding:3px;border:1px solid var(--line2);border-radius:8px;background:var(--surface2);cursor:pointer}
 .transport{
   position:fixed;bottom:16px;left:50%;translate:-50% 0;z-index:40;
   display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:999px;
@@ -186,7 +189,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 .book-prog{display:flex;align-items:center;gap:8px;margin-top:7px;font-size:10.5px;color:var(--muted)}
 .book-prog .mini-track{flex:1}
 .book-prog span{flex:none;font-variant-numeric:tabular-nums}
-.progress-row{position:sticky;top:calc(var(--headerH,66px) + 8px);z-index:35;
+.progress-row{
   display:flex;gap:14px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;
   background:color-mix(in srgb, var(--surface) 88%, transparent);
   border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.25);
@@ -579,11 +582,17 @@ body.pip-window #hudProgress{top:44px}
 /* While a book is open, keep the page content clear of the fixed HUD + progress strip
    so the tabs and controls behind them stay visible at the top of the page. */
 body.book-open main{padding-top:84px}
+body.reading-active{--headerH:0px}
+body.reading-active header{height:0;min-height:0;padding-top:0;padding-bottom:0;border-bottom-width:0;opacity:0;overflow:hidden;pointer-events:none;animation:none}
+body.reading-active #readingHud{top:8px}
+body.reading-active.book-open main{padding-top:48px}
 
 /* ---------- Reading environment: cinema lights-off, full screen, pop-out ---------- */
 header,.mode-row,#chapterRow,#autoRow,#statsRow,#progressRow,#cinemaRow,footer{transition:opacity .5s ease,filter .5s ease}
 body.cinema{background:#060504}
 body.cinema header,body.cinema .mode-row,body.cinema #chapterRow,body.cinema #autoRow,body.cinema #statsRow,body.cinema #progressRow,body.cinema #cinemaRow,body.cinema footer{opacity:.13;filter:saturate(.35);pointer-events:none}
+body.reading-active header{transition:height .35s ease,padding .35s ease,border-width .35s ease,opacity .35s ease}
+body.cinema.reading-active header{opacity:0}
 body.cinema .reader-card{border-color:color-mix(in srgb,var(--amber) 26%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--amber) 10%,transparent),0 30px 90px rgba(0,0,0,.85)}
 .cinema-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cinema-auto{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-left:auto;cursor:pointer;user-select:none}
@@ -666,6 +675,12 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
       <span id="timeLeft">About 0 min left</span>
       <span class="pg" id="pageInfo">Page 1 / 1</span>
     </div>
+    <div class="cinema-row" id="cinemaRow">
+      <button class="btn small" id="btnCineTab" title="Lights-off reading in this tab">🕯 Lights off</button>
+      <button class="btn small" id="btnCineFull" title="Reading environment across the full screen">⛶ Full screen</button>
+      <button class="btn small" id="btnCinePip" title="Reading environment in a resizable pop-out window that stays on top">⧉ Pop-out</button>
+      <label class="cinema-auto"><input type="checkbox" id="cinemaAuto" checked> Auto with play</label>
+    </div>
     <div class="progress-row" id="progressRow" hidden>
       <div class="rprog">
         <div class="rp-top"><span>Book progress</span><b id="bookPct">0%</b></div>
@@ -675,12 +690,6 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
         <div class="rp-top"><span>Chapter progress</span><b id="chPct">0%</b></div>
         <div class="mini-track"><div class="mini-fill" id="chFill"></div></div>
       </div>
-    </div>
-    <div class="cinema-row" id="cinemaRow">
-      <button class="btn small" id="btnCineTab" title="Lights-off reading in this tab">🕯 Lights off</button>
-      <button class="btn small" id="btnCineFull" title="Reading environment across the full screen">⛶ Full screen</button>
-      <button class="btn small" id="btnCinePip" title="Reading environment in a resizable pop-out window that stays on top">⧉ Pop-out</button>
-      <label class="cinema-auto"><input type="checkbox" id="cinemaAuto" checked> Auto with play</label>
     </div>
     <div class="reader-card" id="readerCard">
       <h2 id="chapterHeading"></h2>
@@ -769,6 +778,66 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
     <div class="dpanel" id="panelChapters" hidden><div class="list" id="chaptersList"></div></div>
 
     <div class="dpanel" id="panelVoice" hidden>
+      <div>
+        <label class="lbl" for="readerTheme">Reading colors</label>
+        <select id="readerTheme">
+          <option value="dark">Dark - Black &amp; White</option>
+          <option value="light">Light</option>
+          <option value="sepia">Sepia</option>
+          <option value="custom">Custom</option>
+        </select>
+        <p class="hint" style="margin-top:7px">Applies only to the reading page, not the menus or controls.</p>
+      </div>
+      <div id="customReaderColors" hidden>
+        <div class="reader-color-pair">
+          <div><label class="lbl" for="readerBgColor">Page background</label><input type="color" id="readerBgColor" value="#050505"></div>
+          <div><label class="lbl" for="readerTextColor">Text color</label><input type="color" id="readerTextColor" value="#ffffff"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <label class="lbl" for="ambientMusic">Background music</label>
+        <select id="ambientMusic">
+          <option value="off">Off</option>
+          <optgroup label="Nature / Weather">
+            <option value="nature">Soft rain</option>
+            <option value="blizzard">Harsh blizzard</option>
+            <option value="crickets">Night crickets</option>
+          </optgroup>
+          <optgroup label="Animal voices">
+            <option value="wolf1">Wolf 1 (wolf1.mp3)</option>
+            <option value="wolf2">Wolf 2 (wolf2.mp3)</option>
+            <option value="owl1">Owl 1 (owl1.mp3)</option>
+          </optgroup>
+          <optgroup label="Rain recordings">
+            <option value="rain1">Rain 1 (rain1.wav)</option>
+            <option value="rain2">Rain 2 (rain2.wav)</option>
+            <option value="rain3">Rain 3 (rain3.wav)</option>
+          </optgroup>
+          <optgroup label="Ambient">
+            <option value="calm">Soft ambient music</option>
+          </optgroup>
+          <optgroup label="Cinematic / Moods">
+            <option value="thriller">Thriller / suspense</option>
+            <option value="action">Action (restrained)</option>
+            <option value="mystery">Mystery / noir</option>
+            <option value="fantasy">Sci-fi / fantasy</option>
+            <option value="fireplace">Tavern fireplace</option>
+          </optgroup>
+          <option value="file">My music file…</option>
+        </select>
+        <p class="hint" style="margin-top:7px">Plays softly while the reader is speaking. Presets are generated locally; choose a file for recorded music.</p>
+        <div id="ambientFileWrap" hidden style="margin-top:10px">
+          <label class="lbl" for="ambientFile">Choose an audio or video file</label>
+          <input type="file" id="ambientFile" accept="audio/*,video/mp4,video/webm,video/ogg">
+          <p class="hint" id="ambientFileName" style="margin-top:6px">Choose a file each time you open the reader. Supported formats depend on your browser.</p>
+        </div>
+      </div>
+      <div>
+        <label class="lbl" for="ambientVolume">Music volume</label>
+        <div class="field-row"><input type="range" id="ambientVolume" min="0" max="0.2" step="0.01" value="0.08"><span class="val-badge" id="ambientVolumeValue">40%</span></div>
+      </div>
+      <div class="divider"></div>
       <div><label class="lbl" for="voiceSelect">Voice</label>
         <select id="voiceSelect"><option>Loading voices...</option></select></div>
 
@@ -1115,6 +1184,8 @@ const DEFAULTS = {
   highlight:"sentence+word", autoScroll:true, autoTranslate:"off",
   translateStyle:"simple", translateEngine:"google", genderOn:true, genderFix:{},
   autoContinue:true, webAutoContinue:true, theme:"dark",
+  readerTheme:"dark", readerBg:"#050505", readerText:"#ffffff",
+  ambientMusic:"off", ambientVolume:0.08,
   skipEnabled:true, skipList:DEFAULT_SKIP, pronEnabled:true,
   pronRules:DEFAULT_PRON.map(([from,to]) => ({from, to, on:true}))
 };
@@ -1123,6 +1194,9 @@ function loadSettings(){
   try{ saved = JSON.parse(localStorage.getItem("upr.settings") || "{}"); }catch(e){}
   const s = Object.assign({}, DEFAULTS, saved);
   if(!Array.isArray(s.pronRules)) s.pronRules = DEFAULTS.pronRules.map(r => ({...r}));
+  if(s.ambientMusic === "file" || !["off","calm","fantasy","mystery","nature","blizzard","crickets","thriller","action","fireplace","wolf1","wolf2","owl1","rain1","rain2","rain3"].includes(s.ambientMusic)) s.ambientMusic = DEFAULTS.ambientMusic;
+  const volume = Number(s.ambientVolume);
+  s.ambientVolume = Number.isFinite(volume) ? clamp(volume, 0, 0.2) : DEFAULTS.ambientVolume;
   return s;
 }
 function saveSettings(){ try{ localStorage.setItem("upr.settings", JSON.stringify(S.settings)); }catch(e){} }
@@ -1136,7 +1210,7 @@ const S = {
   wordIdx:[], allFonts:[]
 };
 const pos = {u:0};
-let gen = 0, renderGen = 0, voices = [], utStart = 0, boundaryTimer = null, editingRule = null;
+let gen = 0, renderGen = 0, voices = [], utStart = 0, boundaryTimer = null, editingRule = null, voiceFallbackURI = "";
 let hlFallbackTimer = null, lastBoundaryAt = 0, activeUtterance = null;
 let wdTimer = null, stallRetries = 0, wakeLock = null;
 let library = [], bookmarks = [];
@@ -1466,14 +1540,15 @@ function updateStats(){
   $("timeLeft").textContent = `About ${mins} min left`;
   $("pageInfo").textContent = `Page ${S.pageIdx + 1} / ${S.pages.length || 1}`;
   const cp = chapterProgress(), bp = bookProgress();
-  $("progressRow").hidden = true; /* replaced by the always-visible strip under the HUD */
+  const readerVisible = !$("readerPane").hidden;
+  $("progressRow").hidden = !S.book || !readerVisible;
   $("chPct").textContent = Math.round(cp * 100) + "%";
   $("chFill").style.width = (cp * 100).toFixed(1) + "%";
   $("bookPct").textContent = Math.round(bp * 100) + "%";
   $("bookFill").style.width = (bp * 100).toFixed(1) + "%";
   const hp = $("hudProgress");
   if(hp){
-    hp.hidden = !S.book;
+    hp.hidden = !S.book || readerVisible;
     $("hudBookPct").textContent = Math.round(bp * 100) + "%";
     $("hudBookFill").style.width = (bp * 100).toFixed(1) + "%";
     $("hudChPct").textContent = Math.round(cp * 100) + "%";
@@ -1631,6 +1706,11 @@ function detectLang(){
 }
 function pickVoice(){
   if(!voices.length) return null;
+  if(voiceFallbackURI){
+    const fallback = voices.find(v => v.voiceURI === voiceFallbackURI);
+    if(fallback) return fallback;
+    voiceFallbackURI = "";
+  }
   if(S.settings.voiceURI !== "auto"){
     const v = voices.find(v => v.voiceURI === S.settings.voiceURI);
     if(v) return v;
@@ -1649,6 +1729,28 @@ function applyVoice(ut){
   const v = pickVoice();
   if(v){ ut.voice = v; ut.lang = v.lang; } else ut.lang = "en-US";
 }
+function findFallbackVoice(failed){
+  if(!failed) return null;
+  const choices = voices.filter(v => v.voiceURI !== failed.voiceURI);
+  const language = String(failed.lang || "").toLowerCase().split(/[-_]/)[0];
+  return choices.find(v => v.localService && v.default && String(v.lang).toLowerCase().startsWith(language))
+    || choices.find(v => v.localService && String(v.lang).toLowerCase().startsWith(language))
+    || choices.find(v => v.localService && v.default)
+    || choices.find(v => v.default)
+    || choices[0]
+    || null;
+}
+function retryWithFallbackVoice(ut, error){
+  const failed = ut && ut.voice;
+  if(!failed || failed.voiceURI === voiceFallbackURI) return false;
+  const fallback = findFallbackVoice(failed);
+  if(!fallback) return false;
+  voiceFallbackURI = fallback.voiceURI;
+  const reason = typeof error === "string" && error ? " (" + error + ")" : "";
+  toast(failed.name + " could not speak" + reason + "; using " + fallback.name + " for this session.");
+  restartSpeech();
+  return true;
+}
 function currentUnit(){
   const page = S.pages[S.pageIdx];
   return page && page.units[pos.u] || null;
@@ -1656,13 +1758,22 @@ function currentUnit(){
 function stopHlFallback(){
   if(hlFallbackTimer){ clearTimeout(hlFallbackTimer); hlFallbackTimer = null; }
 }
+function speechUnitForOffset(units, offset){
+  let last = units[0];
+  for(const unit of units){
+    if(offset >= unit.start && offset < unit.end) return unit;
+    if(offset < unit.start) return unit;
+    last = unit;
+  }
+  return last;
+}
 /* Android Chrome normally sends no word-boundary events. Estimate the word
    being spoken from elapsed time so the highlight keeps moving there too. */
-function startHlFallback(u, g){
+function startHlFallback(batch, g){
   stopHlFallback();
   if(!isMobileSpeech) return;
   if(!["word","sentence+word","paragraph+word"].includes(S.settings.highlight)) return;
-  const ws = wordSpans(u.text || "");
+  const ws = wordSpans(batch.spoken || "");
   if(ws.length < 2) return;
   const rate = Math.max(0.5, S.settings.rate) || 1;
   const t0 = performance.now();
@@ -1681,7 +1792,8 @@ function startHlFallback(u, g){
       while(i + 1 < ws.length && starts[i + 1] <= elapsed) i++;
       if(i !== lastIdx){
         lastIdx = i;
-        highlightUnit(u, (u.start || 0) + ws[i].s, false);
+        const orig = batch.map[ws[i].s];
+        highlightUnit(speechUnitForOffset(batch.units, orig), orig, false);
       }
     }
     hlFallbackTimer = setTimeout(tick, 120);
@@ -1699,16 +1811,36 @@ function restartSpeech(){
   if(active) setTimeout(start, isMobileSpeech ? 260 : 60);
   else start();
 }
+function buildSpeechBatch(startIndex){
+  const page = S.pages[S.pageIdx], first = page && page.units[startIndex];
+  if(!first) return null;
+  const units = [], map = [];
+  let spoken = "", endIndex = startIndex - 1;
+  for(let i = startIndex; i < page.units.length; i++){
+    const unit = page.units[i];
+    if(i > startIndex && (unit.p !== first.p || units.length >= 4)) break;
+    const transformed = speechTransform(unit.text, unit.start || 0);
+    const part = transformed.spoken;
+    const separator = spoken && part && !/\s$/.test(spoken) && !/^\s/.test(part) ? " " : "";
+    if(units.length && spoken.length + separator.length + part.length > 480) break;
+    units.push(unit); endIndex = i;
+    if(separator){ spoken += separator; map.push(unit.start || 0); }
+    spoken += part; map.push(...transformed.map);
+  }
+  return {spoken, map, units, endIndex};
+}
 function speakUnit(retryAttempt){
   const g = gen;
   const u = currentUnit();
   if(!u){ chapterFinished(); return; }
   stopHlFallback(); clearTimeout(wdTimer);
-  const {spoken, map} = speechTransform(u.text, u.start || 0);
+  const batch = buildSpeechBatch(pos.u);
+  if(!batch) return;
+  const {spoken, map} = batch;
   const fw = findWord(u.p, u.start, u);
   highlightUnit(u, fw ? fw.s : u.start);
   updateStats();
-  if(!spoken.trim()){ setTimeout(() => { if(g === gen) nextUnit(); }, 0); return; }
+  if(!spoken.trim()){ pos.u = batch.endIndex; setTimeout(() => { if(g === gen) nextUnit(); }, 0); return; }
   const ut = new SpeechSynthesisUtterance(spoken);
   applyVoice(ut);
   ut.rate = S.settings.rate;
@@ -1730,7 +1862,7 @@ function speakUnit(retryAttempt){
         curHlS = sEl;
       }
     }, 900);
-    startHlFallback(u, g);
+    startHlFallback(batch, g);
   };
   ut.onboundary = e => {
     if(g !== gen || e.charIndex == null) return;
@@ -1743,12 +1875,12 @@ function speakUnit(retryAttempt){
     lastBoundaryAt = performance.now();
     clearTimeout(boundaryTimer);
     const orig = map.length ? map[clamp(e.charIndex, 0, map.length - 1)] : (u.start || 0);
-    highlightUnit(u, orig, false);
+    highlightUnit(speechUnitForOffset(batch.units, orig), orig, false);
   };
   ut.onend = () => {
     clearTimeout(boundaryTimer); stopHlFallback(); clearTimeout(wdTimer); stallRetries = 0;
     if(activeUtterance === ut) activeUtterance = null;
-    if(g === gen) nextUnit();
+    if(g === gen){ pos.u = batch.endIndex; nextUnit(); }
   };
   ut.onerror = e => {
     clearTimeout(boundaryTimer); stopHlFallback();
@@ -1759,17 +1891,19 @@ function speakUnit(retryAttempt){
       // the system (not the user) cut the speech off: retry, then move on
       if(S.playing && !S.paused){
         if(stallRetries++ < 2) setTimeout(() => { if(g === gen && S.playing && !S.paused) restartSpeech(); }, 250);
-        else { stallRetries = 0; nextUnit(); }
+        else { stallRetries = 0; if(!retryWithFallbackVoice(ut, e.error)) nextUnit(); }
       }
       return;
     }
+    if(retryWithFallbackVoice(ut, e.error)) return;
     setStatus("Speech error: " + e.error);
     nextUnit();
   };
   try{ if(speechSynthesis.paused) speechSynthesis.resume(); }catch(e){}
-  try{ speechSynthesis.speak(ut); }catch(e){ setStatus("Speech failed"); }
+  try{ speechSynthesis.speak(ut); }
+  catch(e){ if(retryWithFallbackVoice(ut, e.message)) return; setStatus("Speech failed: " + e.message); return; }
   setStatus("Reading");
-  // Watchdog: if the browser never says the sentence ended, recover instead of freezing.
+  // Watchdog: if the browser never ends the utterance, recover instead of freezing.
   const wd = () => {
     if(g !== gen || !S.playing || S.paused) return;
     if(fired && speechSynthesis.speaking && performance.now() - lastBoundaryAt < 5000){ wdTimer = setTimeout(wd, 2500); return; }
@@ -1882,7 +2016,217 @@ function updateTransport(){
   b.classList.toggle("playing", S.playing && !S.paused);
   b.title = S.playing && !S.paused ? "Pause" : "Play";
   holdWake(S.playing && !S.paused);
+  document.body.classList.toggle("reading-active", S.playing && !S.paused);
+  syncAmbientMusic();
   if(S.playing && !S.paused) orbCollapse(); else orbExpand();
+}
+const AMBIENT_MOODS = {
+  calm:{cutoff:900,noise:0,noiseCutoff:1200,interval:12000,chords:[[130.81,164.81,196,246.94],[110,164.81,196,261.63],[87.31,130.81,164.81,220],[98,146.83,196,246.94]]},
+  fantasy:{cutoff:1100,noise:0,noiseCutoff:1200,interval:12000,chords:[[146.83,220,293.66,369.99],[123.47,185,246.94,293.66],[164.81,246.94,329.63,392],[110,164.81,220,293.66]]},
+  mystery:{cutoff:700,noise:0.025,noiseCutoff:500,interval:14000,chords:[[110,164.81,196,233.08],[116.54,174.61,220,261.63],[98,146.83,185,233.08],[87.31,130.81,164.81,207.65]]},
+  nature:{cutoff:900,noise:0.1,noiseCutoff:2600,interval:16000,chords:[[98,146.83,196,246.94],[110,164.81,220,261.63],[82.41,123.47,164.81,220],[98,130.81,196,233.08]]},
+  blizzard:{cutoff:650,noise:0.16,noiseCutoff:950,interval:18000,chords:[[65.41,98,130.81,164.81],[73.42,110,146.83,185],[55,82.41,110,146.83],[65.41,98,123.47,155.56]]},
+  crickets:{cutoff:5200,noise:0.008,noiseCutoff:7000,interval:18000,chords:[],effect:"crickets"},
+  thriller:{cutoff:520,noise:0.018,noiseCutoff:380,interval:16000,chords:[[55,82.41,110,130.81],[58.27,87.31,116.54,138.59],[49,73.42,98,123.47],[51.91,77.78,103.83,123.47]]},
+  action:{cutoff:1300,noise:0,noiseCutoff:1200,interval:5000,chords:[[130.81,196,261.63,329.63],[146.83,220,293.66,369.99],[110,164.81,220,293.66],[164.81,246.94,329.63,392]],effect:"pulse"},
+  fireplace:{cutoff:780,noise:0.035,noiseCutoff:850,interval:16000,chords:[[82.41,123.47,164.81,196],[73.42,110,146.83,185],[87.31,130.81,174.61,207.65],[65.41,98,146.83,174.61]],effect:"crackle"}
+};
+const AMBIENT_TRACKS = {
+  wolf1:"wolf1.mp3", wolf2:"wolf2.mp3", owl1:"owl1.mp3",
+  rain1:"rain1.wav", rain2:"rain2.wav", rain3:"rain3.wav"
+};
+let ambientContext = null, ambientMaster = null, ambientFilter = null, ambientVoices = [];
+let ambientNoiseFilter = null, ambientNoiseGain = null, ambientEffectOscillator = null, ambientEffectGain = null;
+let ambientFileAudio = null, ambientFileUrl = "", ambientAudioSource = "", ambientAudioGeneration = 0;
+let ambientChordTimer = null, ambientEffectTimer = null, ambientSuspendTimer = null, ambientMoodKey = "", ambientChordIndex = 0, ambientErrorShown = false;
+function reportAmbientError(error){
+  if(ambientErrorShown) return;
+  ambientErrorShown = true;
+  const detail = error && error.message ? ": " + error.message : "";
+  toast("Background music unavailable" + detail + ".");
+}
+function ensureAmbientAudio(){
+  if(ambientContext) return true;
+  const AudioContextType = window.AudioContext || window.webkitAudioContext;
+  if(!AudioContextType){ reportAmbientError(new Error("This browser does not support Web Audio.")); return false; }
+  let context = null;
+  try{
+    context = new AudioContextType();
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass"; filter.frequency.value = 900; filter.Q.value = 0.35;
+    const master = context.createGain();
+    master.gain.value = 0;
+    filter.connect(master); master.connect(context.destination);
+    const voices = [];
+    for(let i = 0; i < 4; i++){
+      const oscillator = context.createOscillator(), gain = context.createGain();
+      oscillator.type = "sine"; gain.gain.value = 0.12;
+      oscillator.connect(gain); gain.connect(filter); oscillator.start();
+      voices.push(oscillator);
+    }
+    const noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for(let i = 0; i < noiseData.length; i++) noiseData[i] = Math.random() * 2 - 1;
+    const noiseSource = context.createBufferSource(), noiseFilter = context.createBiquadFilter(), noiseGain = context.createGain();
+    noiseSource.buffer = noiseBuffer; noiseSource.loop = true;
+    noiseFilter.type = "lowpass"; noiseFilter.frequency.value = 1200;
+    noiseGain.gain.value = 0;
+    noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master); noiseSource.start();
+    const effectOscillator = context.createOscillator(), effectGain = context.createGain();
+    effectOscillator.type = "sine"; effectOscillator.frequency.value = 4200; effectGain.gain.value = 0;
+    effectOscillator.connect(effectGain); effectGain.connect(filter); effectOscillator.start();
+    ambientContext = context; ambientFilter = filter; ambientMaster = master; ambientVoices = voices;
+    ambientNoiseFilter = noiseFilter; ambientNoiseGain = noiseGain;
+    ambientEffectOscillator = effectOscillator; ambientEffectGain = effectGain;
+    ambientErrorShown = false;
+    return true;
+  }catch(error){
+    if(context) context.close().catch(() => {});
+    reportAmbientError(error);
+    return false;
+  }
+}
+function setAmbientChord(){
+  if(!ambientContext || !ambientMaster || !S.playing || S.paused) return;
+  const mood = AMBIENT_MOODS[S.settings.ambientMusic];
+  if(!mood) return;
+  const now = ambientContext.currentTime;
+  if(mood.chords.length){
+    const notes = mood.chords[ambientChordIndex % mood.chords.length];
+    ambientVoices.forEach((oscillator, i) => oscillator.frequency.setTargetAtTime(notes[i], now, 2.2));
+    ambientChordIndex++;
+  }
+  ambientFilter.frequency.setTargetAtTime(mood.cutoff, now, 2.2);
+  ambientNoiseFilter.frequency.setTargetAtTime(mood.noiseCutoff, now, 2.2);
+  ambientNoiseGain.gain.setTargetAtTime(mood.noise, now, 1.2);
+  ambientChordTimer = setTimeout(setAmbientChord, mood.interval);
+}
+function setAmbientEffect(){
+  if(!ambientContext || !ambientEffectOscillator || !ambientEffectGain || !S.playing || S.paused) return;
+  const mood = AMBIENT_MOODS[S.settings.ambientMusic];
+  if(!mood || !mood.effect) return;
+  const now = ambientContext.currentTime;
+  let delay = 1000;
+  if(mood.effect === "crickets"){
+    ambientEffectOscillator.frequency.setTargetAtTime(3600 + Math.random() * 900, now, 0.01);
+    ambientEffectGain.gain.cancelScheduledValues(now);
+    ambientEffectGain.gain.setTargetAtTime(0.055, now, 0.01);
+    ambientEffectGain.gain.setTargetAtTime(0, now + 0.08, 0.025);
+    delay = 450 + Math.random() * 1200;
+  }else if(mood.effect === "pulse"){
+    ambientEffectOscillator.frequency.setTargetAtTime(58, now, 0.01);
+    ambientEffectGain.gain.cancelScheduledValues(now);
+    ambientEffectGain.gain.setTargetAtTime(0.09, now, 0.015);
+    ambientEffectGain.gain.setTargetAtTime(0, now + 0.11, 0.035);
+    delay = 520;
+  }else if(mood.effect === "crackle"){
+    ambientNoiseGain.gain.setTargetAtTime(mood.noise + 0.09 + Math.random() * 0.08, now, 0.01);
+    ambientNoiseGain.gain.setTargetAtTime(mood.noise, now + 0.035, 0.035);
+    delay = 350 + Math.random() * 900;
+  }
+  ambientEffectTimer = setTimeout(setAmbientEffect, delay);
+}
+function setAmbientAudioSource(source){
+  if(!source) return;
+  if(!ambientFileAudio){
+    ambientFileAudio = new Audio();
+    ambientFileAudio.loop = true;
+    ambientFileAudio.preload = "metadata";
+  }
+  if(ambientAudioSource === source) return;
+  ambientFileAudio.pause();
+  const generation = ++ambientAudioGeneration;
+  ambientFileAudio.onerror = () => {
+    if(generation === ambientAudioGeneration) reportAmbientError(new Error("The selected track could not be loaded or is not supported by this browser."));
+  };
+  ambientFileAudio.src = source;
+  ambientAudioSource = source;
+  ambientErrorShown = false;
+  ambientFileAudio.load();
+}
+function syncAmbientFile(shouldPlay, source){
+  if(source) setAmbientAudioSource(source);
+  if(!ambientFileAudio) return;
+  if(shouldPlay && S.settings.ambientMusic === "file" && !ambientFileUrl){
+    if(!ambientFileAudio.paused) ambientFileAudio.pause();
+    return;
+  }
+  ambientFileAudio.volume = clamp(Number(S.settings.ambientVolume), 0, 0.2);
+  if(shouldPlay){
+    if(ambientFileAudio.paused) ambientFileAudio.play().catch(error => {
+      if(error && error.name === "AbortError") return;
+      if(S.playing && !S.paused && (S.settings.ambientMusic === "file" || AMBIENT_TRACKS[S.settings.ambientMusic])) reportAmbientError(error);
+    });
+  }else if(!ambientFileAudio.paused) ambientFileAudio.pause();
+}
+function updateAmbientFileControls(){
+  $("ambientFileWrap").hidden = S.settings.ambientMusic !== "file";
+}
+function loadAmbientFile(file){
+  if(!file) return;
+  let url;
+  try{ url = URL.createObjectURL(file); }
+  catch(error){ reportAmbientError(error); return; }
+  const previousUrl = ambientFileUrl;
+  ambientFileUrl = url;
+  setAmbientAudioSource(url);
+  if(previousUrl) URL.revokeObjectURL(previousUrl);
+  $("ambientFileName").textContent = file.name + " — plays locally and is not uploaded.";
+  S.settings.ambientMusic = "file";
+  $("ambientMusic").value = "file";
+  updateAmbientFileControls();
+  saveSettings();
+  syncAmbientMusic();
+}
+function stopAmbientSynthesis(){
+  if(!ambientMoodKey || !ambientContext || !ambientMaster) return;
+  clearTimeout(ambientChordTimer); ambientChordTimer = null;
+  clearTimeout(ambientEffectTimer); ambientEffectTimer = null;
+  ambientMoodKey = "";
+  const now = ambientContext.currentTime;
+  ambientMaster.gain.cancelScheduledValues(now);
+  ambientMaster.gain.setTargetAtTime(0, now, 0.45);
+  clearTimeout(ambientSuspendTimer);
+  ambientSuspendTimer = setTimeout(() => {
+    if(!((S.playing && !S.paused) && AMBIENT_MOODS[S.settings.ambientMusic]) && ambientContext.state === "running"){
+      ambientContext.suspend().catch(reportAmbientError);
+    }
+  }, 1400);
+}
+function syncAmbientMusic(){
+  const musicMode = S.settings.ambientMusic;
+  const shouldPlay = S.playing && !S.paused && musicMode !== "off";
+  if(musicMode === "file"){
+    stopAmbientSynthesis();
+    syncAmbientFile(shouldPlay, ambientFileUrl);
+    return;
+  }
+  const track = AMBIENT_TRACKS[musicMode];
+  if(track){
+    stopAmbientSynthesis();
+    const source = shouldPlay ? new URL(track, document.baseURI).href : "";
+    syncAmbientFile(shouldPlay, source);
+    return;
+  }
+  syncAmbientFile(false);
+  if(!shouldPlay){
+    stopAmbientSynthesis();
+    return;
+  }
+  if(!ensureAmbientAudio()) return;
+  clearTimeout(ambientSuspendTimer); ambientSuspendTimer = null;
+  if(ambientContext.state === "suspended") ambientContext.resume().catch(reportAmbientError);
+  const now = ambientContext.currentTime;
+  ambientMaster.gain.cancelScheduledValues(now);
+  ambientMaster.gain.setTargetAtTime(clamp(Number(S.settings.ambientVolume), 0, 0.2), now, 0.7);
+  if(ambientMoodKey !== S.settings.ambientMusic){
+    clearTimeout(ambientChordTimer);
+    clearTimeout(ambientEffectTimer);
+    ambientMoodKey = S.settings.ambientMusic;
+    ambientChordIndex = 0;
+    setAmbientChord();
+    setAmbientEffect();
+  }
 }
 /* Orb mode: fold the dock into a sphere that docks to the left or right screen edge, away from the text.
    Tap the sphere to fan the menu bar out beside it; drag the sphere to the other side or up/down. */
@@ -1893,10 +2237,11 @@ function applyOrbPos(){
   const t = $("transport");
   t.classList.toggle("side-r", orbSide !== "l");
   t.classList.toggle("side-l", orbSide === "l");
-  const w = t.offsetWidth || 56, h = t.offsetHeight || 56;
+  const h = t.offsetHeight || 56;
   const cy = Math.max(200, Math.min(innerHeight - 176, orbY * innerHeight));
   t.style.top = Math.round(cy - h/2) + "px";
-  t.style.left = Math.round(orbSide === "r" ? innerWidth - w - 12 : 12) + "px";
+  t.style.left = orbSide === "r" ? "calc(100vw - 68px)" : "12px";
+  t.style.right = "auto";
 }
 function orbCollapse(){
   const t = $("transport");
@@ -1909,7 +2254,7 @@ function orbExpand(){
   const t = $("transport"); clearTimeout(orbTimer);
   if(!t.classList.contains("folding") && !t.classList.contains("orb")) return;
   t.classList.remove("open", "orb", "dragging", "side-r", "side-l");
-  t.style.width = ""; t.style.left = ""; t.style.top = "";
+  t.style.width = ""; t.style.left = ""; t.style.right = ""; t.style.top = "";
   requestAnimationFrame(() => requestAnimationFrame(() => { if(!(S.playing && !S.paused)) t.classList.remove("folding"); }));
 }
 function orbOpen(on){
@@ -1983,7 +2328,9 @@ document.addEventListener("visibilitychange", () => {
 });
 setInterval(() => {
   try{
-    if(!isMobileSpeech && S.playing && !S.paused && speechSynthesis.speaking && !speechSynthesis.paused && performance.now() - utStart > 12000){
+    const remoteVoice = activeUtterance && activeUtterance.voice && activeUtterance.voice.localService === false;
+    // Pause/resume can silence browser-managed remote voices.
+    if(!remoteVoice && !isMobileSpeech && S.playing && !S.paused && speechSynthesis.speaking && !speechSynthesis.paused && performance.now() - utStart > 12000){
       speechSynthesis.pause(); speechSynthesis.resume(); utStart = performance.now();
     }
   }catch(e){}
@@ -2128,6 +2475,10 @@ function syncPip(){
     if(d.body.getAttribute("data-theme") !== document.body.getAttribute("data-theme")) d.body.setAttribute("data-theme", document.body.getAttribute("data-theme"));
     d.body.classList.toggle("cinema", document.body.classList.contains("cinema"));
     const set = (id, v) => { const n = d.getElementById(id); if(n && n.textContent !== v) n.textContent = v; };
+    const sourceCard = $("readerCard"), targetCard = d.getElementById("readerCard");
+    if(sourceCard && targetCard){
+      ["--reading-bg","--reading-text"].forEach(name => targetCard.style.setProperty(name, sourceCard.style.getPropertyValue(name)));
+    }
     set("hudTitle", S.book ? (S.book.title || "Untitled") : "—");
     set("hudCh", ($("chTitle").textContent || "").trim() || "Chapter");
     set("hudTime", $("timeLeft").textContent);
@@ -3879,7 +4230,28 @@ function applyAppearance(){
   $("autoContinue").checked = S.settings.autoContinue;
   document.body.dataset.theme = S.settings.theme;
   $("btnTheme").innerHTML = S.settings.theme === "dark" ? "☀ Light" : "🌙 Dark";
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', S.settings.theme === 'dark' ? '#14100a' : '#f2ead9');
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', S.settings.theme === 'dark' ? '#050505' : '#f2ead9');
+  applyReaderColors();
+}
+function applyReaderColors(){
+  const presets = {
+    dark:["#050505","#ffffff"],
+    light:["#fdf8ec","#2d2517"],
+    sepia:["#f4ecd8","#493b2a"]
+  };
+  const theme = Object.prototype.hasOwnProperty.call(presets, S.settings.readerTheme) || S.settings.readerTheme === "custom"
+    ? S.settings.readerTheme : "dark";
+  const validColor = value => /^#[0-9a-f]{6}$/i.test(value || "");
+  const bg = theme === "custom" && validColor(S.settings.readerBg) ? S.settings.readerBg : (presets[theme] || presets.dark)[0];
+  const text = theme === "custom" && validColor(S.settings.readerText) ? S.settings.readerText : (presets[theme] || presets.dark)[1];
+  const card = $("readerCard");
+  card.style.setProperty("--reading-bg", bg);
+  card.style.setProperty("--reading-text", text);
+  $("readerTheme").value = theme;
+  $("customReaderColors").hidden = theme !== "custom";
+  $("readerBgColor").value = validColor(S.settings.readerBg) ? S.settings.readerBg : "#050505";
+  $("readerTextColor").value = validColor(S.settings.readerText) ? S.settings.readerText : "#ffffff";
+  syncPip();
 }
 
 /* ---------- Speech-fixes UI ---------- */
@@ -3945,6 +4317,7 @@ function switchPane(which){
       renderTabStrip();
     }
   }
+  updateStats();
 }
 
 /* ---------- Voices ---------- */
@@ -4097,6 +4470,11 @@ function init(){
 
   seedLibrary();
   applyAppearance();
+  $("ambientMusic").value = S.settings.ambientMusic;
+  $("ambientVolume").value = S.settings.ambientVolume;
+  $("ambientVolumeValue").textContent = Math.round(S.settings.ambientVolume / 0.2 * 100) + "%";
+  $("ambientVolume").disabled = S.settings.ambientMusic === "off";
+  updateAmbientFileControls();
   renderSkipChips();
   $("skipInput").value = S.settings.skipList;
   $("skipToggle").checked = S.settings.skipEnabled;
@@ -4343,8 +4721,8 @@ function init(){
   });
 
   /* Voice & appearance */
-  $("voiceSelect").onchange = e => { S.settings.voiceURI = e.target.value; saveSettings(); if(S.playing && !S.paused) restartSpeech(); };
-  $("speechLang").onchange = e => { S.settings.speechLang = e.target.value; saveSettings(); if(S.playing && !S.paused) restartSpeech(); };
+  $("voiceSelect").onchange = e => { voiceFallbackURI = ""; S.settings.voiceURI = e.target.value; saveSettings(); if(S.playing && !S.paused) restartSpeech(); };
+  $("speechLang").onchange = e => { voiceFallbackURI = ""; S.settings.speechLang = e.target.value; saveSettings(); if(S.playing && !S.paused) restartSpeech(); };
   $("rateRange").oninput = e => { S.settings.rate = +e.target.value; saveSettings(); applyAppearance(); updateStats(); };
   $("rateRange").onchange = () => { if(S.playing && !S.paused) restartSpeech(); };
   $("ratePresets").addEventListener("click", e => {
@@ -4354,8 +4732,24 @@ function init(){
   $("fontInput").onchange = e => { S.settings.font = e.target.value.trim() || "Literata"; saveSettings(); applyAppearance(); };
   $("sizeRange").oninput = e => { S.settings.size = +e.target.value; saveSettings(); applyAppearance(); };
   $("btnResetAppearance").onclick = () => {
-    Object.assign(S.settings, {font:"Literata", size:19, highlight:"sentence+word", autoScroll:true});
+    Object.assign(S.settings, {font:"Literata", size:19, highlight:"sentence+word", autoScroll:true,
+      readerTheme:"dark", readerBg:"#050505", readerText:"#ffffff"});
     saveSettings(); applyAppearance(); toast("Appearance reset.");
+  };
+  $("readerTheme").onchange = e => { S.settings.readerTheme = e.target.value; saveSettings(); applyReaderColors(); };
+  $("readerBgColor").oninput = e => { S.settings.readerBg = e.target.value; saveSettings(); applyReaderColors(); };
+  $("readerTextColor").oninput = e => { S.settings.readerText = e.target.value; saveSettings(); applyReaderColors(); };
+  $("ambientMusic").onchange = e => {
+    S.settings.ambientMusic = e.target.value;
+    $("ambientVolume").disabled = e.target.value === "off";
+    updateAmbientFileControls();
+    saveSettings(); syncAmbientMusic();
+  };
+  $("ambientFile").onchange = e => loadAmbientFile(e.target.files && e.target.files[0]);
+  $("ambientVolume").oninput = e => {
+    S.settings.ambientVolume = clamp(+e.target.value, 0, 0.2);
+    $("ambientVolumeValue").textContent = Math.round(S.settings.ambientVolume / 0.2 * 100) + "%";
+    saveSettings(); syncAmbientMusic();
   };
   $("highlightSelect").onchange = e => { S.settings.highlight = e.target.value; saveSettings(); const u = currentUnit(); if(u && (S.playing || $("content").querySelector(".hl-w,.hl-s,.hl-p"))) highlightUnit(u, u.start, false); };
   $("autoScroll").onchange = e => { S.settings.autoScroll = e.target.checked; saveSettings(); };
