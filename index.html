@@ -498,35 +498,91 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 }
 
 
-/* ---------- Orb mode: the dock folds into a sphere while reading ---------- */
-.transport{transition:width .5s cubic-bezier(.65,0,.25,1),left .5s cubic-bezier(.65,0,.25,1),translate .5s cubic-bezier(.65,0,.25,1),bottom .5s,padding .5s,border-radius .5s,background .4s,box-shadow .4s,border-color .4s}
+/* ---------- Orb mode: the dock folds into a sphere that docks to the screen edge, away from the text ---------- */
+.transport{transition:width .5s cubic-bezier(.65,0,.25,1),left .5s cubic-bezier(.65,0,.25,1),translate .5s cubic-bezier(.65,0,.25,1),top .5s cubic-bezier(.65,0,.25,1),bottom .5s,padding .5s,border-radius .5s,background .4s,box-shadow .4s,border-color .4s}
 .transport .tbtn{transition:width .4s cubic-bezier(.65,0,.25,1),flex .4s cubic-bezier(.65,0,.25,1),opacity .3s,transform .4s cubic-bezier(.65,0,.25,1),margin .4s,border-width .4s,background .18s}
 .transport.folding{overflow:visible}
 .transport.folding .tbtn:not(.play){width:0!important;min-width:0!important;flex:0 0 0!important;margin:0 -3px;border-width:0;opacity:0;transform:scale(.2) rotate(-90deg);pointer-events:none;overflow:hidden}
-#transport.orb{position:fixed;left:50%;right:auto;translate:-50% 0;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:64px!important;height:64px;padding:0;gap:0;border-radius:50%;justify-content:center;
-  background:transparent;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;animation:none}
+#transport.orb{position:fixed;bottom:auto;translate:0 0;width:56px!important;height:56px;padding:0;gap:0;border-radius:50%;justify-content:center;--gap:44px;touch-action:none;
+  background:transparent;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;animation:none;z-index:60}
+#transport.orb.dragging{transition:none!important}
+#transport.orb.dragging .tbtn.play{transform:scale(1.08)}
 #transport.orb::before{content:"";position:absolute;inset:-1px;border-radius:50%;border:1px dashed color-mix(in srgb,var(--amber) 60%,transparent);animation:orbSpin 16s linear infinite;pointer-events:none}
-#transport.orb::after{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 68%);opacity:.7;animation:orbBreath 3.2s ease-in-out infinite;pointer-events:none;z-index:-1}
-#transport.orb .tbtn.play{width:50px;height:50px;flex:none;font-size:18px;margin:0;
+#transport.orb::after{content:"";position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 68%);opacity:.7;animation:orbBreath 3.2s ease-in-out infinite;pointer-events:none;z-index:-1}
+#transport.orb .tbtn.play{width:44px;height:44px;flex:none;font-size:17px;margin:0;
   background:radial-gradient(circle at 32% 26%,#fff6dc,var(--amber2) 30%,var(--amber) 62%,var(--amber-deep));
   box-shadow:inset -5px -7px 12px rgba(120,70,0,.35),0 6px 22px var(--glow);animation:orbFloat 3.2s ease-in-out infinite}
-#transport.orb .tbtn:not(.play){position:absolute;left:50%;top:50%;width:42px;height:42px;margin:-21px 0 0 -21px;flex:none;border-width:1px;opacity:0;pointer-events:none;
+/* Closed: the other buttons hide inside the sphere */
+#transport.orb .tbtn:not(.play){position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;flex:none;border-width:1px;opacity:0;pointer-events:none;
   transform:translate(0,0) scale(.2);background:color-mix(in srgb,var(--overlay) 92%,transparent);border-color:var(--line2);box-shadow:0 8px 22px rgba(0,0,0,.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+/* Slot order + stagger for the fan-out (play stays in the sphere centre) */
+#transport.orb .tbtn:nth-child(1){--i:1;--d:0s}
+#transport.orb .tbtn:nth-child(2){--i:2;--d:.03s}
+#transport.orb .tbtn:nth-child(3){--i:3;--d:.06s}
+#transport.orb .tbtn:nth-child(4){--i:4;--d:.09s}
+#transport.orb .tbtn:nth-child(6){--i:5;--d:.12s}
+#transport.orb .tbtn:nth-child(7){--i:6;--d:.15s}
+#transport.orb .tbtn:nth-child(8){--i:7;--d:.18s}
+#transport.orb .tbtn:nth-child(9){--i:8;--d:.21s}
+#transport.orb .tbtn:not(.play){--y:calc((var(--i,4) - 3.5)*var(--gap))}
+/* Open: a single tap fans the buttons out beside the sphere as a labelled menu bar riding a line */
 #transport.orb.open::before{animation-play-state:paused;border-style:solid;opacity:.35}
-#transport.orb.open .tbtn:not(.play){opacity:1;pointer-events:auto;transform:translate(var(--x),var(--y)) scale(1);transition-delay:var(--d,0s)}
-#transport.orb .tbtn:not(.play):hover{transform:translate(var(--x),var(--y)) scale(1.12)}
-#transport.orb .tbtn:nth-child(1){--x:-104px;--y:0px;--d:0s}
-#transport.orb .tbtn:nth-child(2){--x:-93.7px;--y:-45.1px;--d:.03s}
-#transport.orb .tbtn:nth-child(3){--x:-64.8px;--y:-81.3px;--d:.06s}
-#transport.orb .tbtn:nth-child(4){--x:-23.1px;--y:-101.4px;--d:.09s}
-#transport.orb .tbtn:nth-child(6){--x:23.1px;--y:-101.4px;--d:.09s}
-#transport.orb .tbtn:nth-child(7){--x:64.8px;--y:-81.3px;--d:.06s}
-#transport.orb .tbtn:nth-child(8){--x:93.7px;--y:-45.1px;--d:.03s}
-#transport.orb .tbtn:nth-child(9){--x:104px;--y:0px;--d:0s}
+#transport .orb-rail,#transport .orb-link{position:absolute;opacity:0;pointer-events:none;transition:opacity .3s .08s;z-index:-1}
+#transport .orb-rail{top:50%;width:1px;height:calc(var(--gap,44px)*8 - 12px);transform:translateY(-50%);
+  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--amber) 55%,transparent) 16%,color-mix(in srgb,var(--amber) 55%,transparent) 84%,transparent)}
+#transport .orb-link{top:50%;width:38px;height:1px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--amber) 55%,transparent),transparent)}
+#transport.orb.side-r .orb-rail{right:64px}
+#transport.orb.side-l .orb-rail{left:64px}
+#transport.orb.side-r .orb-link{right:28px}
+#transport.orb.side-l .orb-link{left:28px;transform:scaleX(-1)}
+#transport.orb.open .orb-rail,#transport.orb.open .orb-link{opacity:.9}
+#transport.orb.open .tbtn:not(.play){opacity:1;pointer-events:auto;top:50%;margin:-17px 0 0 0;
+  width:auto;min-width:0;height:34px;border-radius:999px;display:flex;align-items:center;gap:6px;padding:0 11px 0 10px;font-size:15px;white-space:nowrap;
+  transform:translateY(var(--y)) scale(1);transition-delay:var(--d,0s)}
+#transport.orb.side-r.open .tbtn:not(.play){left:auto;right:64px}
+#transport.orb.side-l.open .tbtn:not(.play){right:auto;left:64px}
+#transport.orb .tbtn:not(.play)::after{content:attr(data-label);font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+#transport.orb.open .tbtn:not(.play):hover,#transport.orb.open .tbtn:not(.play):active{transform:translateY(var(--y)) scale(1.05);color:var(--amber2);border-color:var(--amber)}
+#transport.orb.open .tbtn:not(.play):hover::after,#transport.orb.open .tbtn:not(.play):active::after{color:var(--amber2)}
+@media (max-height:600px){#transport.orb{--gap:36px}}
 @keyframes orbSpin{to{transform:rotate(360deg)}}
 @keyframes orbBreath{0%,100%{transform:scale(.92);opacity:.45}50%{transform:scale(1.08);opacity:.85}}
 @keyframes orbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px) scale(1.03)}}
 @media (prefers-reduced-motion:reduce){#transport.orb::before,#transport.orb::after,#transport.orb .tbtn.play{animation:none}}
+
+/* ---------- Reading HUD: title, chapter, time & page stay visible in every mode ---------- */
+#readingHud{position:fixed;top:calc(var(--headerH,66px) + 8px);left:50%;translate:-50% 0;z-index:55;display:flex;align-items:center;gap:7px;max-width:min(92vw,720px);
+  padding:6px 14px;border-radius:999px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;
+  background:color-mix(in srgb,var(--overlay) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line2);box-shadow:0 8px 26px rgba(0,0,0,.35);animation:fadeDown .5s .1s ease both}
+#readingHud[hidden]{display:none}
+.hud-title{font-weight:700;color:var(--amber2);overflow:hidden;text-overflow:ellipsis;max-width:32vw}
+.hud-ch{overflow:hidden;text-overflow:ellipsis;max-width:24vw}
+.hud-right{display:flex;align-items:center;gap:7px;flex:none}
+#hudTime,#hudPage{font-weight:600;color:var(--muted)}
+.hud-sep{opacity:.45}
+body.cinema #readingHud{background:color-mix(in srgb,#000 74%,transparent);border-color:color-mix(in srgb,var(--amber) 28%,transparent);box-shadow:0 8px 26px rgba(0,0,0,.6)}
+body.pip-window #readingHud{top:10px}
+
+/* ---------- Reading environment: cinema lights-off, full screen, pop-out ---------- */
+header,.mode-row,#chapterRow,#autoRow,#statsRow,#progressRow,#cinemaRow,footer{transition:opacity .5s ease,filter .5s ease}
+body.cinema{background:#060504}
+body.cinema header,body.cinema .mode-row,body.cinema #chapterRow,body.cinema #autoRow,body.cinema #statsRow,body.cinema #progressRow,body.cinema #cinemaRow,body.cinema footer{opacity:.13;filter:saturate(.35);pointer-events:none}
+body.cinema .reader-card{border-color:color-mix(in srgb,var(--amber) 26%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--amber) 10%,transparent),0 30px 90px rgba(0,0,0,.85)}
+.cinema-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cinema-auto{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-left:auto;cursor:pointer;user-select:none}
+.btn.active{border-color:var(--amber);color:var(--amber2);background:color-mix(in srgb,var(--amber) 12%,var(--surface))}
+#cinemaBar{position:fixed;top:calc(var(--headerH,66px) + 54px);left:50%;translate:-50% 0;z-index:56;display:flex;gap:6px;padding:5px;border-radius:999px;
+  background:color-mix(in srgb,var(--overlay) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line2);box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .35s,translate .35s}
+body.cinema #cinemaBar{opacity:1;pointer-events:auto}
+body.cinema.cinema-idle #cinemaBar{opacity:0;pointer-events:none}
+#cinemaBar .btn{font-size:12px;padding:5px 11px;border-radius:999px}
+/* The pop-out reading window mirrors the reader, resizable to any size */
+body.pip-window{margin:0;padding:14px;min-height:100vh}
+body.pip-window .reader-card{margin:54px auto 0;max-width:860px}
+
 </style>
 </head>
 <body data-theme="dark">
@@ -536,6 +592,14 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 <div id="progPop" class="progpop" aria-live="polite">
   <div class="prog-top"><b id="progLabel">Working…</b><span class="prog-pct" id="progPct"></span></div>
   <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+</div>
+
+<!-- Always-on reading HUD: title, chapter, time left and page progress stay visible in every mode -->
+<div id="readingHud" hidden>
+  <span class="hud-title" id="hudTitle">—</span>
+  <span class="hud-sep">·</span>
+  <span class="hud-ch" id="hudCh">Chapter</span>
+  <span class="hud-right"><span id="hudTime">About 0 min left</span><span class="hud-sep">·</span><span id="hudPage">Page 1 / 1</span></span>
 </div>
 
 <header>
@@ -585,6 +649,12 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
         <div class="mini-track"><div class="mini-fill" id="chFill"></div></div>
       </div>
     </div>
+    <div class="cinema-row" id="cinemaRow">
+      <button class="btn small" id="btnCineTab" title="Lights-off reading in this tab">🕯 Lights off</button>
+      <button class="btn small" id="btnCineFull" title="Reading environment across the full screen">⛶ Full screen</button>
+      <button class="btn small" id="btnCinePip" title="Reading environment in a resizable pop-out window that stays on top">⧉ Pop-out</button>
+      <label class="cinema-auto"><input type="checkbox" id="cinemaAuto" checked> Auto with play</label>
+    </div>
     <div class="reader-card" id="readerCard">
       <h2 id="chapterHeading"></h2>
       <div id="content"></div>
@@ -630,16 +700,24 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
   </div>
 </main>
 
+<div id="cinemaBar">
+  <button class="btn small" id="btnCinemaExit" title="Turn the lights back on">✕ Lights on</button>
+  <button class="btn small" id="btnCineFullBar" title="Reading environment in full screen">⛶ Full screen</button>
+  <button class="btn small" id="btnCinePipBar" title="Reading environment in a pop-out window">⧉ Pop-out</button>
+</div>
+
 <div class="transport" id="transport">
-  <button class="tbtn" id="btnPages" title="Pages & chapters">☰</button>
-  <button class="tbtn" id="btnPrevPage" title="Previous page">«</button>
-  <button class="tbtn" id="btnBookmark" title="Add bookmark">🔖</button>
-  <button class="tbtn" id="btnPrevSent" title="Previous sentence">⏮︎</button>
+  <button class="tbtn" id="btnPages" data-label="Contents" title="Pages & chapters">☰</button>
+  <button class="tbtn" id="btnPrevPage" data-label="Prev page" title="Previous page">«</button>
+  <button class="tbtn" id="btnBookmark" data-label="Bookmark" title="Add bookmark">🔖</button>
+  <button class="tbtn" id="btnPrevSent" data-label="Prev line" title="Previous sentence">⏮︎</button>
   <button class="tbtn play" id="btnPlay" title="Play / pause">▶︎</button>
-  <button class="tbtn" id="btnNextSent" title="Next sentence">⏭︎</button>
-  <button class="tbtn" id="btnStop" title="Stop">■</button>
-  <button class="tbtn" id="btnSettings" title="Voice & reading settings">⚙</button>
-  <button class="tbtn" id="btnNextPage" title="Next page">»</button>
+  <button class="tbtn" id="btnNextSent" data-label="Next line" title="Next sentence">⏭︎</button>
+  <button class="tbtn" id="btnStop" data-label="Stop" title="Stop">■</button>
+  <button class="tbtn" id="btnSettings" data-label="Voice" title="Voice & reading settings">⚙</button>
+  <button class="tbtn" id="btnNextPage" data-label="Next page" title="Next page">»</button>
+  <i class="orb-rail" aria-hidden="true"></i>
+  <i class="orb-link" aria-hidden="true"></i>
 </div>
 
 <footer>
@@ -1321,6 +1399,7 @@ function updateStats(){
   $("chFill").style.width = (cp * 100).toFixed(1) + "%";
   $("bookPct").textContent = Math.round(bp * 100) + "%";
   $("bookFill").style.width = (bp * 100).toFixed(1) + "%";
+  syncHud();
 }
 function renderPagesList(){
   $("pagesList").innerHTML = S.pages.map((p, i) => {
@@ -1673,6 +1752,7 @@ function togglePlay(){
   if(S.playing && !S.paused){ pausePlayback(); return; }
   if(S.playing && S.paused){ resumePlayback(); return; }
   S.playing = true; S.paused = false;
+  if(cinemaAuto && !document.body.classList.contains("cinema")) cinemaOn();
   updateTransport(); restartSpeech();
 }
 function pausePlayback(){
@@ -1683,6 +1763,7 @@ function pausePlayback(){
 }
 function resumePlayback(){
   S.paused = false;
+  if(cinemaAuto && !document.body.classList.contains("cinema")) cinemaOn();
   if(S.needRespeak){ S.needRespeak = false; restartSpeech(); }
   else {
     try{ speechSynthesis.resume(); }catch(e){}
@@ -1696,6 +1777,7 @@ function stopPlayback(){
   activeUtterance = null;
   try{ speechSynthesis.cancel(); }catch(e){}
   S.playing = false; S.paused = false; S.needRespeak = false;
+  if(document.body.classList.contains("cinema")) cinemaOff();
   clearHighlights(); updateTransport(); setStatus("Ready"); updateStats();
 }
 function seekSentence(d){
@@ -1722,34 +1804,79 @@ function updateTransport(){
   holdWake(S.playing && !S.paused);
   if(S.playing && !S.paused) orbCollapse(); else orbExpand();
 }
-/* Orb mode: fold the dock into a sphere while reading; tap the sphere to fan the buttons around it. */
+/* Orb mode: fold the dock into a sphere that docks to the left or right screen edge, away from the text.
+   Tap the sphere to fan the menu bar out beside it; drag the sphere to the other side or up/down. */
 let orbTimer = null;
+let orbSide = "r", orbY = 0.6;
+try{ orbSide = localStorage.getItem("urOrbSide") === "l" ? "l" : "r"; orbY = parseFloat(localStorage.getItem("urOrbY")); if(!(orbY > 0 && orbY < 1)) orbY = 0.6; }catch(e){}
+function applyOrbPos(){
+  const t = $("transport");
+  t.classList.toggle("side-r", orbSide !== "l");
+  t.classList.toggle("side-l", orbSide === "l");
+  const w = t.offsetWidth || 56, h = t.offsetHeight || 56;
+  const cy = Math.max(200, Math.min(innerHeight - 176, orbY * innerHeight));
+  t.style.top = Math.round(cy - h/2) + "px";
+  t.style.left = Math.round(orbSide === "r" ? innerWidth - w - 12 : 12) + "px";
+}
 function orbCollapse(){
   const t = $("transport");
   if(t.classList.contains("orb") || t.classList.contains("folding")) return;
   t.style.width = t.offsetWidth + "px";
   t.classList.add("folding");
-  setTimeout(() => { if(S.playing && !S.paused) t.classList.add("orb"); }, 440);
+  setTimeout(() => { if(S.playing && !S.paused){ t.classList.add("orb"); applyOrbPos(); } }, 440);
 }
 function orbExpand(){
   const t = $("transport"); clearTimeout(orbTimer);
   if(!t.classList.contains("folding") && !t.classList.contains("orb")) return;
-  t.classList.remove("open", "orb"); t.style.width = "";
+  t.classList.remove("open", "orb", "dragging", "side-r", "side-l");
+  t.style.width = ""; t.style.left = ""; t.style.top = "";
   requestAnimationFrame(() => requestAnimationFrame(() => { if(!(S.playing && !S.paused)) t.classList.remove("folding"); }));
 }
 function orbOpen(on){
   const t = $("transport"); clearTimeout(orbTimer);
   t.classList.toggle("open", !!on);
-  if(on) orbTimer = setTimeout(() => orbOpen(false), 5000);
+  if(on) orbTimer = setTimeout(() => orbOpen(false), 6000);
 }
 (function(){
   const t = $("transport");
+  /* Drag the docked sphere along the edge, or fling it to the opposite side */
+  let drag = null, dragMoved = false;
+  t.addEventListener("pointerdown", e => {
+    if(!t.classList.contains("orb") || t.classList.contains("open")) return;
+    drag = {id:e.pointerId, sx:e.clientX, sy:e.clientY, l:t.offsetLeft, tp:t.offsetTop, moved:false};
+  });
+  t.addEventListener("pointermove", e => {
+    if(!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+    if(!drag.moved && Math.hypot(dx, dy) < 12) return;
+    if(!drag.moved){ drag.moved = true; t.classList.add("dragging"); orbOpen(false); try{ t.setPointerCapture(e.pointerId); }catch(_){} }
+    t.style.left = Math.round(drag.l + dx) + "px";
+    t.style.top = Math.round(clamp(drag.tp + dy, 172, innerHeight - 204)) + "px";
+  });
+  const endDrag = e => {
+    if(!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
+    const moved = drag.moved; drag = null;
+    t.classList.remove("dragging");
+    if(!moved) return;
+    dragMoved = true; setTimeout(() => dragMoved = false, 350);
+    const cx = t.offsetLeft + t.offsetWidth/2;
+    orbSide = cx < innerWidth/2 ? "l" : "r";
+    orbY = clamp((t.offsetTop + t.offsetHeight/2) / (innerHeight || 1), 0, 1);
+    try{ localStorage.setItem("urOrbSide", orbSide); localStorage.setItem("urOrbY", String(orbY)); }catch(_){}
+    applyOrbPos();
+  };
+  t.addEventListener("pointerup", endDrag);
+  t.addEventListener("pointercancel", endDrag);
+  document.addEventListener("pointerup", endDrag, true);
+  document.addEventListener("pointercancel", endDrag, true);
+  addEventListener("resize", () => { if(t.classList.contains("orb")) applyOrbPos(); });
   t.addEventListener("click", e => {
-    if(t.classList.contains("orb") && !t.classList.contains("open") && e.target.closest("#btnPlay")){
+    if(dragMoved){ dragMoved = false; e.stopPropagation(); e.preventDefault(); return; }
+    if(t.classList.contains("orb") && !t.classList.contains("open") && (e.target.closest("#btnPlay") || e.target === t)){
       e.stopPropagation(); e.preventDefault(); orbOpen(true); return;
     }
     if(t.classList.contains("open")){
-      if(e.target.closest("#btnPages,#btnSettings,#btnBookmark")) setTimeout(() => orbOpen(false), 150);
+      if(e.target.closest("#btnPages,#btnBookmark,#btnSettings,#btnStop")) setTimeout(() => orbOpen(false), 150);
       else orbOpen(true);
     }
   }, true);
@@ -1774,6 +1901,135 @@ setInterval(() => {
     }
   }catch(e){}
 }, 9000);
+
+/* ---------- Reading HUD sync: mirrors title / chapter / time / page everywhere ---------- */
+function syncHud(){
+  const hud = $("readingHud"); if(!hud) return;
+  hud.hidden = !S.book;
+  if(!S.book) return;
+  const set = (id, v) => { const n = $(id); if(n && n.textContent !== v) n.textContent = v; };
+  set("hudTitle", S.book.title || "Untitled");
+  set("hudCh", ($("chTitle").textContent || "").trim() || "Chapter");
+  set("hudTime", $("timeLeft").textContent);
+  set("hudPage", $("pageInfo").textContent);
+  syncPip();
+}
+setInterval(syncHud, 700);
+
+/* ---------- Reading environment: cinema lights-off, full screen, pop-out window ---------- */
+let cinemaMode = "tab", cinemaAuto = true, pipWin = null, cinemaIdleTimer = null;
+try{
+  const m = localStorage.getItem("urCinemaMode");
+  if(m === "tab" || m === "full" || m === "pip") cinemaMode = m;
+  cinemaAuto = localStorage.getItem("urCinemaAuto") !== "0";
+}catch(e){}
+function updateCinemaUI(){
+  const on = document.body.classList.contains("cinema");
+  [["btnCineTab", cinemaMode === "tab" && on], ["btnCineFull", cinemaMode === "full"], ["btnCinePip", cinemaMode === "pip"],
+   ["btnCineFullBar", cinemaMode === "full"], ["btnCinePipBar", cinemaMode === "pip"]].forEach(([id, act]) => {
+    const b = $(id); if(b) b.classList.toggle("active", !!act);
+  });
+  const cb = $("cinemaAuto"); if(cb) cb.checked = cinemaAuto;
+}
+function nudgeCinemaBar(){
+  document.body.classList.remove("cinema-idle");
+  clearTimeout(cinemaIdleTimer);
+  cinemaIdleTimer = setTimeout(() => { if(document.body.classList.contains("cinema")) document.body.classList.add("cinema-idle"); }, 4000);
+}
+document.addEventListener("pointermove", () => { if(document.body.classList.contains("cinema")) nudgeCinemaBar(); });
+document.addEventListener("pointerdown", () => { if(document.body.classList.contains("cinema")) nudgeCinemaBar(); });
+function enterFullscreen(){
+  const el = document.documentElement;
+  if(document.fullscreenElement){ try{ document.exitFullscreen(); }catch(e){} return; }
+  const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if(fn){
+    try{ const r = fn.call(el); if(r && r.catch) r.catch(() => toast("Full screen was blocked.")); }
+    catch(e){ toast("Full screen is not available here."); }
+  }
+  else toast("Full screen is not supported in this browser — use Lights off or Pop-out instead.");
+}
+async function enterPip(){
+  if(!("documentPictureInPicture" in window)){
+    toast("Pop-out needs Chrome or Edge on desktop — reading lights-off in this tab instead.");
+    cinemaMode = "tab"; try{ localStorage.setItem("urCinemaMode", "tab"); }catch(e){}
+    document.body.classList.add("cinema"); updateCinemaUI(); return;
+  }
+  if(pipWin && !pipWin.closed){ pipWin.focus(); return; }
+  let w;
+  try{ w = pipWin = await documentPictureInPicture.requestWindow({width: Math.round(screen.width * .42), height: Math.round(screen.height * .72)}); }
+  catch(e){ toast("Pop-out was blocked by the browser."); return; }
+  w.document.title = (S.book ? S.book.title + " — " : "") + "Ultra Pro Reader";
+  /* Copy every stylesheet so the pop-out looks identical and can be resized freely */
+  [...document.styleSheets].forEach(ss => {
+    try{
+      const st = w.document.createElement("style");
+      st.textContent = [...ss.cssRules].map(r => r.cssText).join("\n");
+      w.document.head.appendChild(st);
+    }catch(e){
+      if(ss.href){ const l = w.document.createElement("link"); l.rel = "stylesheet"; l.href = ss.href; w.document.head.appendChild(l); }
+    }
+  });
+  w.document.body.setAttribute("data-theme", document.body.getAttribute("data-theme") || "dark");
+  w.document.body.classList.add("pip-window");
+  w.document.body.innerHTML = `
+    <div id="readingHud">
+      <span class="hud-title" id="hudTitle"></span><span class="hud-sep">·</span><span class="hud-ch" id="hudCh"></span>
+      <span class="hud-right"><span id="hudTime"></span><span class="hud-sep">·</span><span id="hudPage"></span></span>
+    </div>
+    <div class="reader-card" id="readerCard"><h2 id="chapterHeading"></h2><div id="content"></div></div>`;
+  w.addEventListener("pagehide", () => {
+    pipWin = null;
+    /* Only react to the user closing the window itself; a programmatic close
+       (Lights on / switching mode) already set the state we want. */
+    if(!document.body.classList.contains("cinema") || cinemaMode !== "pip"){ updateCinemaUI(); return; }
+    cinemaMode = "tab"; try{ localStorage.setItem("urCinemaMode", "tab"); }catch(e){}
+    updateCinemaUI();
+  });
+  updateCinemaUI(); syncPip();
+}
+function syncPip(){
+  if(!pipWin || pipWin.closed) return;
+  try{
+    const d = pipWin.document, c = $("content"), ch = $("chapterHeading");
+    if(!c || !ch) return;
+    if(d.body.getAttribute("data-theme") !== document.body.getAttribute("data-theme")) d.body.setAttribute("data-theme", document.body.getAttribute("data-theme"));
+    d.body.classList.toggle("cinema", document.body.classList.contains("cinema"));
+    const set = (id, v) => { const n = d.getElementById(id); if(n && n.textContent !== v) n.textContent = v; };
+    set("hudTitle", S.book ? (S.book.title || "Untitled") : "—");
+    set("hudCh", ($("chTitle").textContent || "").trim() || "Chapter");
+    set("hudTime", $("timeLeft").textContent);
+    set("hudPage", $("pageInfo").textContent);
+    const hud = d.getElementById("readingHud"); if(hud) hud.hidden = !S.book;
+    set("chapterHeading", ch.textContent);
+    const cc = d.getElementById("content");
+    if(cc && cc.innerHTML !== c.innerHTML) cc.innerHTML = c.innerHTML;
+  }catch(e){}
+}
+function cinemaOn(mode){
+  if(mode && mode !== cinemaMode){
+    cinemaMode = mode; try{ localStorage.setItem("urCinemaMode", mode); }catch(e){}
+    if(mode !== "pip" && pipWin && !pipWin.closed){ try{ pipWin.close(); }catch(e){} }
+  }
+  if(cinemaMode === "pip"){
+    if(document.fullscreenElement){ try{ document.exitFullscreen(); }catch(e){} }
+    enterPip();
+  }
+  if(cinemaMode === "full") enterFullscreen();
+  document.body.classList.add("cinema");
+  updateCinemaUI(); nudgeCinemaBar();
+}
+function cinemaOff(){
+  document.body.classList.remove("cinema", "cinema-idle");
+  if(document.fullscreenElement){ try{ document.exitFullscreen(); }catch(e){} }
+  if(pipWin && !pipWin.closed){ try{ pipWin.close(); }catch(e){} }
+  updateCinemaUI();
+}
+document.addEventListener("fullscreenchange", () => {
+  if(!document.fullscreenElement && cinemaMode === "full"){
+    cinemaMode = "tab"; try{ localStorage.setItem("urCinemaMode", "tab"); }catch(e){}
+    updateCinemaUI();
+  }
+});
 
 /* ---------- Library & books ---------- */
 function splitChapters(text){
@@ -3860,6 +4116,19 @@ function init(){
   $("btnBookmark").onclick = addBookmark;
   $("btnPages").onclick = () => openDrawer("Pages");
   $("btnSettings").onclick = () => openDrawer("Voice");
+
+  /* Reading environment: lights-off / full screen / pop-out */
+  $("btnCineTab").onclick = () => { if(cinemaMode === "tab" && document.body.classList.contains("cinema")) cinemaOff(); else cinemaOn("tab"); };
+  $("btnCineFull").onclick = () => cinemaOn("full");
+  $("btnCinePip").onclick = () => cinemaOn("pip");
+  $("btnCinemaExit").onclick = cinemaOff;
+  $("btnCineFullBar").onclick = () => cinemaOn("full");
+  $("btnCinePipBar").onclick = () => cinemaOn("pip");
+  $("cinemaAuto").onchange = e => {
+    cinemaAuto = e.target.checked;
+    try{ localStorage.setItem("urCinemaAuto", cinemaAuto ? "1" : "0"); }catch(_){}
+  };
+  updateCinemaUI(); syncHud();
 
   /* Footer */
   $("btnTheme").onclick = () => { S.settings.theme = S.settings.theme === "dark" ? "light" : "dark"; saveSettings(); applyAppearance(); };
