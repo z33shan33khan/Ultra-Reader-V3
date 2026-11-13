@@ -1,135 +1,133 @@
-# Ultra Reader v3
+# 📚 Ultra Pro Reader
 
-A single-file, offline-friendly reading app with natural text-to-speech. Drop in a novel, import an EPUB/PDF, or open a web chapter — Ultra Pro Reader reads it aloud with word-level highlighting, chapters, bookmarks, and a built-in mini browser.
+A single-file, privacy-first **read-aloud novel reader** that runs entirely in your browser — no install, no server, no account. Import your books (.epub, .pdf, .txt, .md), have them read aloud with highlighting, read translated web novels with gender-aware translation, and enjoy a distraction-free **cinema reading environment**.
 
-Everything lives in one `Ultra-Reader-v3.html` file: no build step, no server, no dependencies to install.
-
----
-
-## Features
-
-### Reading & speech
-
-- **Read aloud** with the browser's built-in voices, with play, pause, stop, previous/next sentence, and previous/next page.
-- **Karaoke-style highlighting** — choose Word by Word, Entire Sentence, Sentence + Word, Entire Paragraph, or Paragraph + Word.
-- **Click to read from anywhere** — tap any word or sentence in the page to start or resume from that point.
-- **Auto-scroll** keeps the spoken line in view.
-- **Auto-continue** to the next chapter (or the next web chapter) when the current one finishes.
-- **Time left estimate** and page counter for the current chapter.
-- **100+ voice languages**, with automatic matching of an installed voice.
-
-### Make the voice sound right
-
-- **Skip words & punctuation** — symbols like `—`, `*`, `【】`, `♪` are silently skipped without changing the visible text. Named entries like `comma`, `period`, or `dash` are supported too.
-- **Pronunciation fixes** — built-in Chinese pinyin rules (`Xin → Shin`, `Qing → Ching`, `Cai → Tsai`, …), plus your own find-and-replace rules. Combined names such as `Qingcheng` are split into syllables automatically.
-- **Test box** previews exactly what the voice will say before you commit a rule.
-- **Speed control** from 0.5× to 3× with quick presets, and **voice selection** per language.
-
-### Library
-
-- **Import** `.txt`, `.md`, `.html`, `.epub`, and `.pdf` files, paste raw text, or pull a chapter straight from a website.
-- Automatic **chapter detection** (`Chapter`, `Ch`, `Episode`, `Part`, number forms, and Chinese numerals).
-- **Search and sort** by title, chapters, or recently added.
-- **Collapsible tree view** of books and chapters, with expand/collapse all.
-- **Bookmarks** store the book, chapter, page, and text excerpt.
-- **Reading progress is saved** per book and restored the next time you open it.
-
-### Mini browser
-
-- Up to **8 tabs** with back, forward, reload, home, and a quick-links start page.
-- **Reader view** extracts a clean article from a page; **Live view** loads the real site (needed for signing in).
-- Multi-source fetching with automatic fallback, so a blocked source doesn't stop the extraction.
-- **Read page** sends the extracted article to the reader, and web chapter navigation detects previous/next chapters.
-- Paste a **YouTube** link to watch it in place.
-- Open any page in your normal browser with one click.
-
-### Appearance
-
-- Warm **dark** and **paper-light** themes.
-- Adjustable font family (including Noto Nastaliq Urdu, Noto Serif SC, Noto Sans JP, and Amiri) and font size.
-- Pick from installed system fonts via the font browser.
-- Optional **auto-translate** of pages using Google Translate.
-- Fully responsive layout; on phones the playback bar becomes a bottom dock.
-
-### Library contents
-
-A complete sample novella, *The Jade Sword Chronicle* (3 chapters), is included on first launch so you can try everything immediately.
+> One file. `Ultra-Reader-Version4.html`. Open it and start reading.
 
 ---
 
-## Getting started
+## ✨ Features
 
-1. Download or clone the repository.
-2. Open `Ultra-Reader-Finished-version.html` in a modern browser.
-3. Press **Play** to hear the sample book, or use the buttons at the top to open a file, paste text, or load a web page.
+### 📖 Reading & Library
+- **Import almost anything** — `.epub`, `.pdf`, `.txt`, `.md`, `.html` files, pasted text, or chapters straight from a website
+- **Smart chapter splitting** — detects `Chapter 1`, `第一章`, prologue/epilogue headings, and Chinese numerals
+- **Chapter tree & page list** — browse chapters with word counts, expand/collapse all
+- **Library with search & sorting** (title A→Z, recently added, chapter count)
+- **Rename novels & chapters** inline
+- **🔖 Bookmarks** — jump straight back to any saved spot
+- **Progress everything** — book %, chapter %, time-left estimate, and page counter, always visible
 
-That's it — there is no install step.
+### 🔊 Read Aloud (Text-to-Speech)
+- Sentence-by-sentence narration with **live karaoke-style highlighting**
+- **Word-level highlighting** as each word is spoken
+- 100+ narration languages with automatic voice matching
+- Click any paragraph to start reading from there
+- **Sentence skip buttons** (⏮/⏭), page skip («/»), stop, and play/pause
+- **Auto-continue** to the next chapter when one finishes
+- **Keeps reading reliably on mobile** — wake-lock keeps the screen on, and a watchdog restarts speech if the phone silences it in the background (no more stalling mid-chapter)
+- **Pronunciation rules** — teach it names ("Qi → Chi", "Xiao → Shiao"); combined names are auto-split into syllables. Audio only, text untouched
+- **Skip lists** — automatically skip headings, author notes, etc.
+- Adjustable speed, voice, pitch and more
 
-### Recommended browsers
+### 🀄 Smart Translation with Gender Awareness
+- Built-in translation for foreign-language chapters (Google engine, multiple styles)
+- **Smart Chinese gender fix**: Chinese writes 他/她 the same way, so translators call every character "he". The reader detects each character's gender from 她, titles like 小姐/夫人, and name cues — then uses **she/her for women and he/him for men** in the English translation
+- Add your own character corrections (name → gender)
 
-| Browser | Support |
-| --- | --- |
-| Chrome / Edge (desktop & Android) | Best — Web Speech API, EPUB, PDF |
-| Safari (macOS / iOS) | Works, voice list varies |
-| Firefox | Reading works; speech support depends on OS voices |
+### 🎬 Reading Environment (Cinema Mode)
+Three focus modes — pick your favourite, with an **Auto with play** option that turns the lights off the moment you press play:
+- **🕯 Lights off** — everything except your book and the HUD fades into darkness
+- **⛶ Full screen** — true full-screen reading
+- **⧉ Pop-out** — opens the reader in a **real, full-size, freely resizable window** that carries your exact book, position and lights-off state (falls back to an always-on-top mini window with its own control dock)
+- **✕ Lights on** — instantly back
 
-> **Note:** Reading aloud uses the Web Speech API (`speechSynthesis`), which is available in all current major browsers. If no voices appear, make sure voices are installed in your operating system.
+### 🧭 The Orb (floating menu)
+While reading, the control bar folds into a small golden sphere that **docks to the left or right screen edge** — away from your text:
+- **Tap** → instant **play/pause**
+- **Long-press (~½ second)** → fans out a labelled menu bar (Contents · Prev page · Bookmark · Prev line · Next line · Stop · Voice · Next page)
+- **Drag** → reposition along the edge or fling it to the other side (remembered)
 
-### Internet access
+### 📌 Always-on Reading HUD
+A slim strip that **never disappears in any mode**:
+`Book title · Chapter name · Time remaining · Page X / Y`
+plus a second strip with live **BOOK %** and **CHAPTER %** progress bars. Present in lights-off, full screen and the pop-out window alike.
 
-The app itself is fully local, but a few optional features use the network:
+### 🌐 Website Reader (mini browser)
+- Read serialised novels straight from the web with **Reader view** (clean text) or **Live view** (for signing in to sites)
+- Tabbed browsing with a speed dial, history, chapter ‹ › navigation
+- Auto-continue through web chapters with narration
 
-- Google Fonts and the PDF.js library are loaded from CDNs.
-- **Auto-translate** uses Google Translate.
-- **Web page fetching** goes through public CORS proxies.
-- **YouTube** playback and external page loading need a connection.
+### 💾 Storage & Privacy
+- **100% local** — books and settings never leave your device
+- **Auto-saved forever**: book text is stored in **IndexedDB** (hundreds of MB of space), so novels survive closing the site — no re-uploading the same document every visit
+- **💾 Backup / 📥 Restore** — export your whole library (books + bookmarks + progress) to a single `.json` file, keep it on your PC or a USB drive, and restore it anywhere (great for moving devices or as a safety net)
 
-Without a connection, reading, imports, the library, and settings all still work.
-
----
-
-## Keyboard shortcuts
-
-| Key | Action |
-| --- | --- |
-| `Space` | Play / pause |
-| `←` / `→` | Previous / next page |
-| `S` | Stop reading |
-| `B` | Add bookmark |
-| `Esc` | Close the drawer or any dialog |
-
-Shortcuts are ignored while typing in an input, textarea, or select.
-
----
-
-## How it works
-
-- **Pagination** splits chapters into pages of roughly 420 words, then wraps words in spans for highlighting.
-- **Speech sync** uses `SpeechSynthesisUtterance` boundary events, with the spoken text mapped back to original character offsets so highlighting stays accurate even after skip rules and pronunciation fixes.
-- **Chapters** are detected with pattern matching and a small Chinese-numeral converter.
-- **EPUB** parsing reads the ZIP container directly using `DecompressionStream`.
-- **PDF** text is extracted page by page with PDF.js.
-- **Storage** uses `localStorage` for settings, library, bookmarks, and progress — nothing is uploaded.
-
-### Project structure
-
-```text
-Ultra-Reader-Finished-version.html   # the whole app: HTML + CSS + JavaScript
-README.md
-```
-
----
-
-## Known limitations
-
-- Voice quality and availability come from the operating system, not the app.
-- Some sites block embedding or CORS proxies; Reader view usually gets around this, Live view may not.
-- Signing in to a site only works in Live view, and only where the site permits embedding.
-- Importing very large books can exceed browser `localStorage` limits; the app warns you and keeps the book for the session.
-- Auto-translate sends page text to Google Translate; leave it off if you need to stay fully offline.
+### 🎨 Comfort & Appearance
+- Dark & light themes, custom reader fonts (including installed system fonts), adjustable text size
+- Clean typography (Literata) and a warm parchment design
 
 ---
 
-## License
+## 🚀 Getting Started
 
-Add a `LICENSE` file (for example, MIT) before publishing the repository if you want to grant reuse rights.
+1. **Host it or open it**
+   - Easiest: push `Ultra-Reader-Version4.html` to a GitHub repo and enable **GitHub Pages** — then open the URL on any device (you can also "Add to Home Screen" on a phone for an app-like feel)
+   - Or simply double-click the file to open it locally
+2. **Add a book**: 📂 open a file, 📋 paste text, or 🌐 load from a website
+3. **Press ▶** — the app folds into the edge-docked orb, lights go off (if Auto with play is on), and your book is read aloud
+
+> Tip: the transport bar stays at the bottom centre when paused, and folds into the edge orb while reading.
+
+---
+
+## ⌨️ Controls Cheat-Sheet
+
+| Action | How |
+|---|---|
+| Play / pause | `Space`, tap the orb, or the ▶ button |
+| Stop | ■ button (also turns the lights back on) |
+| Previous / next sentence | ⏮ / ⏭ or the orb menu |
+| Previous / next page | « / » |
+| Contents & page list | ☰ (opens the side drawer) |
+| Voice & reading settings | ⚙ |
+| Bookmark this spot | 🔖 |
+| Lights off / Full screen / Pop-out | Buttons above the book, or in the floating bar |
+| Turn the lights back on | ✕ Lights on (floating bar) or Stop |
+
+---
+
+## 🧰 Tech Notes
+
+- **Single self-contained HTML file** — no build step, no dependencies except the pdf.js CDN (loaded only for PDF imports)
+- **Storage:** IndexedDB for book text (large quota), localStorage for metadata, progress, bookmarks and settings
+- **Speech:** the Web Speech API (`speechSynthesis`) — works best in Chrome/Edge
+- **Pop-out:** uses the Document Picture-in-Picture API on Chromium desktop browsers; other browsers gracefully fall back to lights-off reading
+- **Privacy:** there is no backend, no analytics, no account. Everything stays in your browser
+
+## ✅ Browser Support
+
+| Browser | Reading | Pop-out window | Notes |
+|---|---|---|---|
+| Chrome / Edge (desktop & Android) | ✅ Best | ✅ | Recommended |
+| Firefox | ✅ | ⛔ (falls back to Lights off) | |
+| Safari / iOS | ⚠️ Partial | ⛔ | Voices vary; no Document PiP |
+
+---
+
+## ❓ FAQ
+
+**Do I have to re-upload my book every time I open the site?**
+No. Books are saved automatically and restored when you return — including your exact chapter and page.
+
+**Can I move my library to another device?**
+Yes — **Library → 💾 Backup** on the first device, then **📥 Restore** on the other.
+
+**Why does the voice stop on my phone sometimes?**
+Mobile browsers aggressively silence background audio. The app fights this with a screen wake-lock and an auto-restart watchdog, but if your browser kills the tab, reopening it resumes at your saved position.
+
+**Is my data uploaded anywhere?**
+No. Everything lives in your browser's storage on your device.
+
+---
+
+*Ultra Pro Reader — your books, read aloud, in a beautiful light.* 📖🎧
