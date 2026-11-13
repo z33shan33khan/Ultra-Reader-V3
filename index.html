@@ -808,14 +808,24 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
             <option value="wolf1">Wolf 1 (wolf1.mp3)</option>
             <option value="wolf2">Wolf 2 (wolf2.mp3)</option>
             <option value="owl1">Owl 1 (owl1.mp3)</option>
+            <option value="owl2">Owl 2 (owl2.mp3)</option>
           </optgroup>
           <optgroup label="Rain recordings">
             <option value="rain1">Rain 1 (rain1.wav)</option>
             <option value="rain2">Rain 2 (rain2.wav)</option>
             <option value="rain3">Rain 3 (rain3.wav)</option>
+            <option value="rain4">Rain 4 (rain4.mp3)</option>
+            <option value="rain5">Rain 5 (rain5.wav)</option>
+            <option value="rain6">Rain 6 (rain6.mp3)</option>
           </optgroup>
           <optgroup label="Ambient">
             <option value="calm">Soft ambient music</option>
+            <option value="soft1">Soft ambient 1 (soft1.mp3)</option>
+            <option value="soft2">Soft ambient 2 (soft2.mp3)</option>
+            <option value="soft3">Soft ambient 3 (soft3.mp3)</option>
+            <option value="soft4">Soft ambient 4 (soft4.mp3)</option>
+            <option value="soft5">Soft ambient 5 (soft5.mp3)</option>
+            <option value="soft6">Soft ambient 6 (soft6.mp3)</option>
           </optgroup>
           <optgroup label="Cinematic / Moods">
             <option value="thriller">Thriller / suspense</option>
@@ -1194,7 +1204,7 @@ function loadSettings(){
   try{ saved = JSON.parse(localStorage.getItem("upr.settings") || "{}"); }catch(e){}
   const s = Object.assign({}, DEFAULTS, saved);
   if(!Array.isArray(s.pronRules)) s.pronRules = DEFAULTS.pronRules.map(r => ({...r}));
-  if(s.ambientMusic === "file" || !["off","calm","fantasy","mystery","nature","blizzard","crickets","thriller","action","fireplace","wolf1","wolf2","owl1","rain1","rain2","rain3"].includes(s.ambientMusic)) s.ambientMusic = DEFAULTS.ambientMusic;
+  if(s.ambientMusic === "file" || !["off","calm","fantasy","mystery","nature","blizzard","crickets","thriller","action","fireplace","wolf1","wolf2","owl1","owl2","rain1","rain2","rain3","rain4","rain5","rain6","soft1","soft2","soft3","soft4","soft5","soft6"].includes(s.ambientMusic)) s.ambientMusic = DEFAULTS.ambientMusic;
   const volume = Number(s.ambientVolume);
   s.ambientVolume = Number.isFinite(volume) ? clamp(volume, 0, 0.2) : DEFAULTS.ambientVolume;
   return s;
@@ -2032,8 +2042,11 @@ const AMBIENT_MOODS = {
   fireplace:{cutoff:780,noise:0.035,noiseCutoff:850,interval:16000,chords:[[82.41,123.47,164.81,196],[73.42,110,146.83,185],[87.31,130.81,174.61,207.65],[65.41,98,146.83,174.61]],effect:"crackle"}
 };
 const AMBIENT_TRACKS = {
-  wolf1:"wolf1.mp3", wolf2:"wolf2.mp3", owl1:"owl1.mp3",
-  rain1:"rain1.wav", rain2:"rain2.wav", rain3:"rain3.wav"
+  wolf1:"audio/wolf1.mp3", wolf2:"audio/wolf2.mp3", owl1:"audio/owl1.mp3", owl2:"audio/owl2.mp3",
+  rain1:"audio/rain1.wav", rain2:"audio/rain2.wav", rain3:"audio/rain3.wav",
+  rain4:"audio/rain4.mp3", rain5:"audio/rain5.wav", rain6:"audio/rain6.mp3",
+  soft1:"audio/soft1.mp3", soft2:"audio/soft2.mp3", soft3:"audio/soft3.mp3",
+  soft4:"audio/soft4.mp3", soft5:"audio/soft5.mp3", soft6:"audio/soft6.mp3"
 };
 let ambientContext = null, ambientMaster = null, ambientFilter = null, ambientVoices = [];
 let ambientNoiseFilter = null, ambientNoiseGain = null, ambientEffectOscillator = null, ambientEffectGain = null;
