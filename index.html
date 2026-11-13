@@ -564,6 +564,18 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 .hud-sep{opacity:.45}
 body.cinema #readingHud{background:color-mix(in srgb,#000 74%,transparent);border-color:color-mix(in srgb,var(--amber) 28%,transparent);box-shadow:0 8px 26px rgba(0,0,0,.6)}
 body.pip-window #readingHud{top:10px}
+/* Progress strip under the HUD */
+#hudProgress{position:fixed;top:calc(var(--headerH,66px) + 46px);left:50%;translate:-50% 0;z-index:55;display:flex;gap:16px;align-items:center;max-width:min(92vw,720px);
+  padding:7px 14px;border-radius:999px;background:color-mix(in srgb,var(--overlay) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line2);box-shadow:0 8px 26px rgba(0,0,0,.35)}
+#hudProgress[hidden]{display:none}
+.hud-pr{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1;min-width:0}
+.hud-pr b{font-size:10.5px;color:var(--amber2);flex:none}
+.hud-track{flex:1;height:4px;border-radius:99px;background:color-mix(in srgb,var(--text) 16%,transparent);overflow:hidden;min-width:52px}
+.hud-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#7fd7a8,var(--jade));transition:width .4s ease}
+.hud-fill.ch{background:linear-gradient(90deg,var(--amber2),var(--amber))}
+body.cinema #hudProgress{background:color-mix(in srgb,#000 74%,transparent);border-color:color-mix(in srgb,var(--amber) 28%,transparent);box-shadow:0 8px 26px rgba(0,0,0,.6)}
+body.pip-window #hudProgress{top:44px}
 
 /* ---------- Reading environment: cinema lights-off, full screen, pop-out ---------- */
 header,.mode-row,#chapterRow,#autoRow,#statsRow,#progressRow,#cinemaRow,footer{transition:opacity .5s ease,filter .5s ease}
@@ -573,7 +585,7 @@ body.cinema .reader-card{border-color:color-mix(in srgb,var(--amber) 26%,transpa
 .cinema-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cinema-auto{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-left:auto;cursor:pointer;user-select:none}
 .btn.active{border-color:var(--amber);color:var(--amber2);background:color-mix(in srgb,var(--amber) 12%,var(--surface))}
-#cinemaBar{position:fixed;top:calc(var(--headerH,66px) + 54px);left:50%;translate:-50% 0;z-index:56;display:flex;gap:6px;padding:5px;border-radius:999px;
+#cinemaBar{position:fixed;top:calc(var(--headerH,66px) + 92px);left:50%;translate:-50% 0;z-index:56;display:flex;gap:6px;padding:5px;border-radius:999px;
   background:color-mix(in srgb,var(--overlay) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border:1px solid var(--line2);box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .35s,translate .35s}
 body.cinema #cinemaBar{opacity:1;pointer-events:auto}
@@ -581,7 +593,13 @@ body.cinema.cinema-idle #cinemaBar{opacity:0;pointer-events:none}
 #cinemaBar .btn{font-size:12px;padding:5px 11px;border-radius:999px}
 /* The pop-out reading window mirrors the reader, resizable to any size */
 body.pip-window{margin:0;padding:14px;min-height:100vh}
-body.pip-window .reader-card{margin:54px auto 0;max-width:860px}
+body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(100% - 28px)}
+.pip-dock{position:fixed;bottom:14px;left:50%;translate:-50% 0;display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:999px;z-index:60;
+  background:color-mix(in srgb,var(--overlay) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--line2);box-shadow:0 14px 44px rgba(0,0,0,.4)}
+.pip-dock .tbtn{width:42px;height:42px;border-radius:50%;border:1px solid transparent;background:transparent;color:var(--text);font-size:16px;cursor:pointer;display:grid;place-items:center;flex:none}
+.pip-dock .tbtn:hover{background:var(--surface2);border-color:var(--line2)}
+.pip-dock .tbtn.play{width:56px;height:56px;font-size:21px;background:linear-gradient(135deg,var(--amber2),var(--amber) 60%,var(--amber-deep));color:#241a06;box-shadow:0 6px 24px var(--glow);border:0}
 
 </style>
 </head>
@@ -600,6 +618,12 @@ body.pip-window .reader-card{margin:54px auto 0;max-width:860px}
   <span class="hud-sep">·</span>
   <span class="hud-ch" id="hudCh">Chapter</span>
   <span class="hud-right"><span id="hudTime">About 0 min left</span><span class="hud-sep">·</span><span id="hudPage">Page 1 / 1</span></span>
+</div>
+
+<!-- Always-on progress strip: book & chapter bars ride right under the HUD -->
+<div id="hudProgress" hidden>
+  <div class="hud-pr"><span>Book</span><div class="hud-track"><div class="hud-fill" id="hudBookFill"></div></div><b id="hudBookPct">0%</b></div>
+  <div class="hud-pr"><span>Chapter</span><div class="hud-track"><div class="hud-fill ch" id="hudChFill"></div></div><b id="hudChPct">0%</b></div>
 </div>
 
 <header>
@@ -878,6 +902,9 @@ body.pip-window .reader-card{margin:54px auto 0;max-width:860px}
           <button class="btn small" id="libImport">📂 Import file</button>
           <button class="btn small" id="libPaste">📋 Paste text</button>
           <button class="btn small" id="libWeb">🌐 From website</button>
+          <button class="btn small" id="libBackup" title="Download every book, bookmark and your progress as one file">💾 Backup</button>
+          <button class="btn small" id="libRestore" title="Restore books from a backup file">📥 Restore</button>
+          <input type="file" id="libRestoreFile" accept=".json,application/json" hidden>
         </div>
         <div style="display:flex;gap:5px;align-items:center">
           <button class="btn small" id="libExpandAll" title="Expand all novels & chapters">▾ Expand all</button>
@@ -1112,8 +1139,50 @@ let wdTimer = null, stallRetries = 0, wakeLock = null;
 let library = [], bookmarks = [];
 try{ library = JSON.parse(localStorage.getItem("upr.library") || "[]"); }catch(e){}
 try{ bookmarks = JSON.parse(localStorage.getItem("upr.bookmarks") || "[]"); }catch(e){}
-function saveLibrary(){ try{ localStorage.setItem("upr.library", JSON.stringify(library)); }catch(e){ toast("Storage is full — this book is kept for this session only."); } }
+function saveLibrary(){
+  /* Full text goes to IndexedDB; localStorage keeps only titles + placeholders. */
+  try{
+    library.forEach(b => { if(b.chapters) idbPut("t:" + b.id, JSON.stringify({ch: b.chapters})); });
+    const lite = library.map(b => ({...b, chapters: (b.chapters || []).map(c => ({title: c.title, text: "__IDB__"}))}));
+    localStorage.setItem("upr.library", JSON.stringify(lite));
+  }catch(e){ toast("Storage is full - this book is kept for this session only."); }
+}
 function saveBookmarks(){ try{ localStorage.setItem("upr.bookmarks", JSON.stringify(bookmarks)); }catch(e){} }
+/* ---------- Big-library cache: book text lives in IndexedDB (hundreds of MB free) so
+   novels survive closing the site — localStorage alone fills up at ~5 MB. ---------- */
+let _idbP = null;
+function idb(){
+  if(_idbP) return _idbP;
+  _idbP = new Promise((res, rej) => {
+    try{
+      const rq = indexedDB.open("upr-books", 1);
+      rq.onupgradeneeded = () => rq.result.createObjectStore("texts");
+      rq.onsuccess = () => res(rq.result);
+      rq.onerror = () => rej(rq.error);
+    }catch(e){ rej(e); }
+  }).catch(() => null);
+  return _idbP;
+}
+async function idbPut(key, val){
+  const db = await idb(); if(!db) return;
+  return new Promise(res => { const tx = db.transaction("texts", "readwrite"); tx.objectStore("texts").put(val, key); tx.oncomplete = res; tx.onerror = res; });
+}
+async function idbGet(key){
+  const db = await idb(); if(!db) return null;
+  return new Promise(res => { const tx = db.transaction("texts", "readonly"); const rq = tx.objectStore("texts").get(key); rq.onsuccess = () => res(rq.result ?? null); rq.onerror = () => res(null); });
+}
+async function idbDel(key){
+  const db = await idb(); if(!db) return;
+  try{ const tx = db.transaction("texts", "readwrite"); tx.objectStore("texts").delete(key); }catch(e){}
+}
+async function hydrateLibrary(){
+  for(const b of library){
+    if(b.chapters && b.chapters.some(c => c.text === "__IDB__")){
+      const raw = await idbGet("t:" + b.id);
+      if(raw){ try{ const d = JSON.parse(raw); if(d && Array.isArray(d.ch) && d.ch.length) b.chapters = d.ch; }catch(e){} }
+    }
+  }
+}
 function saveProgress(){
   if(!S.book) return;
   try{
@@ -1394,11 +1463,19 @@ function updateStats(){
   $("timeLeft").textContent = `About ${mins} min left`;
   $("pageInfo").textContent = `Page ${S.pageIdx + 1} / ${S.pages.length || 1}`;
   const cp = chapterProgress(), bp = bookProgress();
-  $("progressRow").hidden = !S.book;
+  $("progressRow").hidden = true; /* replaced by the always-visible strip under the HUD */
   $("chPct").textContent = Math.round(cp * 100) + "%";
   $("chFill").style.width = (cp * 100).toFixed(1) + "%";
   $("bookPct").textContent = Math.round(bp * 100) + "%";
   $("bookFill").style.width = (bp * 100).toFixed(1) + "%";
+  const hp = $("hudProgress");
+  if(hp){
+    hp.hidden = !S.book;
+    $("hudBookPct").textContent = Math.round(bp * 100) + "%";
+    $("hudBookFill").style.width = (bp * 100).toFixed(1) + "%";
+    $("hudChPct").textContent = Math.round(cp * 100) + "%";
+    $("hudChFill").style.width = (cp * 100).toFixed(1) + "%";
+  }
   syncHud();
 }
 function renderPagesList(){
@@ -1839,21 +1916,27 @@ function orbOpen(on){
 }
 (function(){
   const t = $("transport");
-  /* Drag the docked sphere along the edge, or fling it to the opposite side */
-  let drag = null, dragMoved = false;
+  /* Drag the docked sphere along the edge, or fling it to the opposite side.
+     Tap = play/pause. Long-press (~0.4s) = open/close the menu fan. */
+  let drag = null, dragMoved = false, lpTimer = null, lpFired = false;
   t.addEventListener("pointerdown", e => {
     if(!t.classList.contains("orb") || t.classList.contains("open")) return;
     drag = {id:e.pointerId, sx:e.clientX, sy:e.clientY, l:t.offsetLeft, tp:t.offsetTop, moved:false};
+    lpFired = false;
+    clearTimeout(lpTimer);
+    lpTimer = setTimeout(() => { lpFired = true; drag = null; t.classList.remove("dragging"); orbOpen(true); }, 420);
   });
   t.addEventListener("pointermove", e => {
     if(!drag || e.pointerId !== drag.id) return;
     const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
-    if(!drag.moved && Math.hypot(dx, dy) < 12) return;
+    if(!drag.moved && Math.hypot(dx, dy) < 12){ return; }
+    clearTimeout(lpTimer);
     if(!drag.moved){ drag.moved = true; t.classList.add("dragging"); orbOpen(false); try{ t.setPointerCapture(e.pointerId); }catch(_){} }
     t.style.left = Math.round(drag.l + dx) + "px";
     t.style.top = Math.round(clamp(drag.tp + dy, 172, innerHeight - 204)) + "px";
   });
   const endDrag = e => {
+    clearTimeout(lpTimer);
     if(!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
     const moved = drag.moved; drag = null;
     t.classList.remove("dragging");
@@ -1872,8 +1955,9 @@ function orbOpen(on){
   addEventListener("resize", () => { if(t.classList.contains("orb")) applyOrbPos(); });
   t.addEventListener("click", e => {
     if(dragMoved){ dragMoved = false; e.stopPropagation(); e.preventDefault(); return; }
+    if(lpFired){ lpFired = false; e.stopPropagation(); e.preventDefault(); return; }
     if(t.classList.contains("orb") && !t.classList.contains("open") && (e.target.closest("#btnPlay") || e.target === t)){
-      e.stopPropagation(); e.preventDefault(); orbOpen(true); return;
+      e.stopPropagation(); e.preventDefault(); togglePlay(); return;   /* tap the orb: pause / play right away */
     }
     if(t.classList.contains("open")){
       if(e.target.closest("#btnPages,#btnBookmark,#btnSettings,#btnStop")) setTimeout(() => orbOpen(false), 150);
@@ -1917,7 +2001,7 @@ function syncHud(){
 setInterval(syncHud, 700);
 
 /* ---------- Reading environment: cinema lights-off, full screen, pop-out window ---------- */
-let cinemaMode = "tab", cinemaAuto = true, pipWin = null, cinemaIdleTimer = null;
+let cinemaMode = "tab", cinemaAuto = true, pipWin = null, popWin = null, cinemaIdleTimer = null;
 try{
   const m = localStorage.getItem("urCinemaMode");
   if(m === "tab" || m === "full" || m === "pip") cinemaMode = m;
@@ -1925,8 +2009,9 @@ try{
 }catch(e){}
 function updateCinemaUI(){
   const on = document.body.classList.contains("cinema");
-  [["btnCineTab", cinemaMode === "tab" && on], ["btnCineFull", cinemaMode === "full"], ["btnCinePip", cinemaMode === "pip"],
-   ["btnCineFullBar", cinemaMode === "full"], ["btnCinePipBar", cinemaMode === "pip"]].forEach(([id, act]) => {
+  const pipOpen = !!(popWin && !popWin.closed) || !!(pipWin && !pipWin.closed);
+  [["btnCineTab", cinemaMode === "tab" && on], ["btnCineFull", cinemaMode === "full"], ["btnCinePip", cinemaMode === "pip" && pipOpen],
+   ["btnCineFullBar", cinemaMode === "full"], ["btnCinePipBar", cinemaMode === "pip" && pipOpen]].forEach(([id, act]) => {
     const b = $(id); if(b) b.classList.toggle("active", !!act);
   });
   const cb = $("cinemaAuto"); if(cb) cb.checked = cinemaAuto;
@@ -1934,7 +2019,7 @@ function updateCinemaUI(){
 function nudgeCinemaBar(){
   document.body.classList.remove("cinema-idle");
   clearTimeout(cinemaIdleTimer);
-  cinemaIdleTimer = setTimeout(() => { if(document.body.classList.contains("cinema")) document.body.classList.add("cinema-idle"); }, 4000);
+  cinemaIdleTimer = setTimeout(() => { if(document.body.classList.contains("cinema")) document.body.classList.add("cinema-idle"); }, 6000);
 }
 document.addEventListener("pointermove", () => { if(document.body.classList.contains("cinema")) nudgeCinemaBar(); });
 document.addEventListener("pointerdown", () => { if(document.body.classList.contains("cinema")) nudgeCinemaBar(); });
@@ -1949,14 +2034,26 @@ function enterFullscreen(){
   else toast("Full screen is not supported in this browser — use Lights off or Pop-out instead.");
 }
 async function enterPip(){
+  if(popWin && !popWin.closed){ try{ popWin.focus(); }catch(e){} return; }
+  /* Preferred: open the whole app in a real, freely resizable full-screen window.
+     It shares your library and reading position, and carries every control. */
+  const base = location.href.split("#")[0].split("?")[0];
+  const readId = S.book ? S.book.id : "";
+  const url = base + (readId ? "?read=" + encodeURIComponent(readId) + "&env=1" : "?env=1");
+  try{
+    popWin = window.open(url, "_blank", "popup=1,width=" + (screen.availWidth || screen.width) + ",height=" + (screen.availHeight || screen.height));
+  }catch(e){ popWin = null; }
+  if(popWin){ try{ popWin.focus(); }catch(e){} toast("Reading window opened — this window stays fully usable."); return; }
+  /* Fallback: Document Picture-in-Picture mirror with its own transport dock */
   if(!("documentPictureInPicture" in window)){
-    toast("Pop-out needs Chrome or Edge on desktop — reading lights-off in this tab instead.");
+    toast("Pop-out was blocked — allow pop-ups for this site, or use Lights off / Full screen instead.");
     cinemaMode = "tab"; try{ localStorage.setItem("urCinemaMode", "tab"); }catch(e){}
     document.body.classList.add("cinema"); updateCinemaUI(); return;
   }
   if(pipWin && !pipWin.closed){ pipWin.focus(); return; }
   let w;
-  try{ w = pipWin = await documentPictureInPicture.requestWindow({width: Math.round(screen.width * .42), height: Math.round(screen.height * .72)}); }
+  /* Same canvas as the fullscreen tab (still freely resizable) */
+  try{ w = pipWin = await documentPictureInPicture.requestWindow({width: screen.availWidth || screen.width, height: screen.availHeight || screen.height}); }
   catch(e){ toast("Pop-out was blocked by the browser."); return; }
   w.document.title = (S.book ? S.book.title + " — " : "") + "Ultra Pro Reader";
   /* Copy every stylesheet so the pop-out looks identical and can be resized freely */
@@ -1976,7 +2073,39 @@ async function enterPip(){
       <span class="hud-title" id="hudTitle"></span><span class="hud-sep">·</span><span class="hud-ch" id="hudCh"></span>
       <span class="hud-right"><span id="hudTime"></span><span class="hud-sep">·</span><span id="hudPage"></span></span>
     </div>
-    <div class="reader-card" id="readerCard"><h2 id="chapterHeading"></h2><div id="content"></div></div>`;
+    <div class="reader-card" id="readerCard"><h2 id="chapterHeading"></h2><div id="content"></div></div>
+    <div id="hudProgress">
+      <div class="hud-pr"><span>Book</span><div class="hud-track"><div class="hud-fill" id="hudBookFill"></div></div><b id="hudBookPct">0%</b></div>
+      <div class="hud-pr"><span>Chapter</span><div class="hud-track"><div class="hud-fill ch" id="hudChFill"></div></div><b id="hudChPct">0%</b></div>
+    </div>
+    <div class="pip-dock" id="pipDock">
+      <button class="tbtn" data-act="pages" title="Pages & chapters (opens in main window)">☰</button>
+      <button class="tbtn" data-act="prevPage" title="Previous page">«</button>
+      <button class="tbtn" data-act="bookmark" title="Add bookmark">🔖</button>
+      <button class="tbtn" data-act="prevSent" title="Previous sentence">⏮︎</button>
+      <button class="tbtn play" id="pipPlay" title="Play / pause">▶︎</button>
+      <button class="tbtn" data-act="nextSent" title="Next sentence">⏭︎</button>
+      <button class="tbtn" data-act="stop" title="Stop">■</button>
+      <button class="tbtn" data-act="settings" title="Voice & settings (opens in main window)">⚙</button>
+      <button class="tbtn" data-act="nextPage" title="Next page">»</button>
+    </div>`;
+  /* Wire the pop-out's own controls to the reader running in the main window */
+  const dock = w.document.getElementById("pipDock");
+  const acts = {
+    pages: () => { try{ window.focus(); }catch(e){} openDrawer("Pages"); },
+    settings: () => { try{ window.focus(); }catch(e){} openDrawer("Voice"); },
+    bookmark: addBookmark,
+    prevSent: () => seekSentence(-1),
+    nextSent: () => seekSentence(1),
+    prevPage: () => goToPage(S.pageIdx - 1),
+    nextPage: () => goToPage(S.pageIdx + 1),
+    stop: stopPlayback
+  };
+  dock.addEventListener("click", e => {
+    const b = e.target.closest("[data-act]"); if(!b) return;
+    if(b.id === "pipPlay"){ togglePlay(); return; }
+    const fn = acts[b.dataset.act]; if(fn) fn();
+  });
   w.addEventListener("pagehide", () => {
     pipWin = null;
     /* Only react to the user closing the window itself; a programmatic close
@@ -2003,16 +2132,25 @@ function syncPip(){
     set("chapterHeading", ch.textContent);
     const cc = d.getElementById("content");
     if(cc && cc.innerHTML !== c.innerHTML) cc.innerHTML = c.innerHTML;
+    const pp = d.getElementById("pipPlay");
+    if(pp){ const want = (S.playing && !S.paused) ? "⏸︎" : "▶︎"; if(pp.textContent !== want) pp.textContent = want; }
   }catch(e){}
 }
 function cinemaOn(mode){
   if(mode && mode !== cinemaMode){
     cinemaMode = mode; try{ localStorage.setItem("urCinemaMode", mode); }catch(e){}
-    if(mode !== "pip" && pipWin && !pipWin.closed){ try{ pipWin.close(); }catch(e){} }
+    if(mode !== "pip"){
+      if(pipWin && !pipWin.closed){ try{ pipWin.close(); }catch(e){} }
+      if(popWin && !popWin.closed){ try{ popWin.close(); }catch(e){} }
+    }
   }
   if(cinemaMode === "pip"){
+    /* Reading lives in its own window — keep THIS window fully usable, no lights-off. */
     if(document.fullscreenElement){ try{ document.exitFullscreen(); }catch(e){} }
+    document.body.classList.remove("cinema", "cinema-idle");
     enterPip();
+    updateCinemaUI();
+    return;
   }
   if(cinemaMode === "full") enterFullscreen();
   document.body.classList.add("cinema");
@@ -2022,6 +2160,7 @@ function cinemaOff(){
   document.body.classList.remove("cinema", "cinema-idle");
   if(document.fullscreenElement){ try{ document.exitFullscreen(); }catch(e){} }
   if(pipWin && !pipWin.closed){ try{ pipWin.close(); }catch(e){} }
+  if(popWin && !popWin.closed){ try{ popWin.close(); }catch(e){} }
   updateCinemaUI();
 }
 document.addEventListener("fullscreenchange", () => {
@@ -3966,13 +4105,55 @@ function init(){
 
   let last = null;
   try{ last = localStorage.getItem("upr.lastBook"); }catch(e){}
-  const book = library.find(b => b.id === last) || library[0];
-  if(book) openBook(book.id);
-  else { switchPane('reader'); }
-  updateTransport(); setStatus("Ready");
+  /* A pop-out reading window links back here with ?read=<book id> — open that book,
+     hydrate IndexedDB texts first, then restore the lights-off environment. */
+  const urlParams = new URLSearchParams(location.search);
+  const readId = urlParams.get("read");
+  if(cinemaMode === "pip" && window.opener){ cinemaMode = "tab"; try{ localStorage.setItem("urCinemaMode", "tab"); }catch(e){} }
+  hydrateLibrary().then(() => {
+    const target = (readId && library.find(b => b.id === readId)) || library.find(b => b.id === last) || library[0];
+    if(target) openBook(target.id);
+    else switchPane("reader");
+    if(readId && (urlParams.get("env") || cinemaAuto) && !document.body.classList.contains("cinema")) cinemaOn();
+    updateTransport(); setStatus("Ready");
+  });
 
   /* Header / mode */
   $("btnLibrary").onclick = () => { renderLibrary(); openModal("modalLibrary"); };
+
+  /* Library backup & restore */
+  $("libBackup").onclick = () => {
+    const data = {v:1, app:"ultra-pro-reader", exported:Date.now(), library, bookmarks, progress:{}};
+    try{ data.progress = JSON.parse(localStorage.getItem("upr.progress") || "{}"); }catch(e){}
+    const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "ultra-reader-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("Library backup downloaded.");
+  };
+  $("libRestore").onclick = () => $("libRestoreFile").click();
+  $("libRestoreFile").onchange = async e => {
+    const f = e.target.files[0]; e.target.value = "";
+    if(!f) return;
+    try{
+      const d = JSON.parse(await f.text());
+      if(!d || !Array.isArray(d.library)) throw new Error("bad");
+      const have = new Set(library.map(b => b.id));
+      let added = 0;
+      d.library.forEach(b => { if(b && b.id && !have.has(b.id)){ library.push(b); added++; } });
+      if(Array.isArray(d.bookmarks)) bookmarks = bookmarks.concat(d.bookmarks.filter(b => b && !bookmarks.some(x => x.id === b.id)));
+      if(d.progress && typeof d.progress === "object"){
+        try{
+          const cur = JSON.parse(localStorage.getItem("upr.progress") || "{}");
+          localStorage.setItem("upr.progress", JSON.stringify({...d.progress, ...cur}));
+        }catch(_){}
+      }
+      saveLibrary(); saveBookmarks(); renderLibrary();
+      toast(`Restored ${added} new book${added === 1 ? "" : "s"} from backup.`);
+    }catch(err){ toast("That file is not a valid Ultra Reader backup."); }
+  };
   $("tabReader").onclick = () => switchPane("reader");
   $("tabWebsite").onclick = () => switchPane("website");
   $("btnOpenWeb").onclick = () => { $("webUrlInput").value = activeTab()?.url || ''; openModal("modalWeb"); setTimeout(() => $("webUrlInput").focus(), 60); };
@@ -4360,6 +4541,7 @@ function init(){
       if(idx >= 0){
         const [gone] = library.splice(idx, 1);
         expandedNovelIds.delete(id);
+        idbDel("t:" + id);
         saveLibrary(); renderLibrary();
         toast(`Deleted “${gone.title}”`, {action:"Undo", onAction:() => { library.splice(idx, 0, gone); saveLibrary(); renderLibrary(); }});
         if(S.book && S.book.id === id){ S.book = null; S.pages = []; renderPage(); }
