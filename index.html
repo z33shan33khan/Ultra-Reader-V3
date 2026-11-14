@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050505">
 <title>Ultra Pro Reader</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050505'/%3E%3Cpath d='M10 15c9-3 17-1 22 3v34c-6-4-13-6-22-4zm44 0c-9-3-17-1-22 3v34c6-4 13-6 22-4z' fill='none' stroke='%23f6c968' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M17 23h9m-9 7h9m12-7h9m-9 7h9' stroke='%233fc98e' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400..700&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -136,7 +137,7 @@ main{max-width:980px;margin:0 auto;padding:18px 18px 130px;display:flex;flex-dir
   background:var(--reading-bg);border:1px solid var(--line);border-radius:18px;
   padding:44px 48px;box-shadow:0 18px 50px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
   animation:fadeUp .55s .2s ease both;position:relative;overflow:hidden;
-  scroll-margin-top:calc(var(--headerH,66px) + 64px);
+  scroll-margin-top:calc(var(--reading-stack-height,140px) + 16px);
 }
 .reader-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),var(--jade),var(--cinnabar));opacity:.75}
 #chapterHeading{font-family:'Literata',serif;font-size:24px;font-weight:600;margin-bottom:22px;line-height:1.35;color:var(--reading-text)}
@@ -190,16 +191,17 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 .book-prog .mini-track{flex:1}
 .book-prog span{flex:none;font-variant-numeric:tabular-nums}
 .progress-row{
-  display:flex;gap:14px;flex-wrap:wrap;padding:8px 12px;border-radius:12px;
+  position:sticky;top:calc(var(--headerH,66px) + 48px);z-index:45;
+  display:flex;flex-direction:column;gap:6px;padding:8px 12px;border-radius:12px;
   background:color-mix(in srgb, var(--surface) 88%, transparent);
   border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.25);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   animation:fadeUp .5s .18s ease both}
-.rprog{flex:1;min-width:130px;display:flex;flex-direction:column;gap:5px}
+.rprog{width:100%;min-width:0;display:grid;grid-template-columns:minmax(120px,1fr) minmax(80px,2fr);align-items:center;gap:10px}
 .rprog .rp-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted)}
 .rprog .rp-top b{color:var(--amber);font-variant-numeric:tabular-nums}
 .list-item .mini-track{margin-top:6px}
-@media (max-width:520px){ .progress-row{gap:10px;padding:7px 10px} .rprog{min-width:104px} .progpop{top:62px} }
+@media (max-width:520px){ .progress-row{gap:6px;padding:7px 9px} .rprog{grid-template-columns:minmax(105px,1fr) minmax(65px,1.4fr);gap:8px} .progpop{top:62px} }
 /* ---------- Rename controls ---------- */
 .tree-leaf-edit{margin-left:2px;flex:none;width:24px;height:24px;border-radius:7px;border:1px solid transparent;
   background:transparent;color:var(--faint);font-size:12px;line-height:1;cursor:pointer;display:grid;place-items:center;transition:.15s}
@@ -329,6 +331,12 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
   .drawer{width:100vw}
   .browser-stage{height:58vh;min-height:280px}
   .speed-dial{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:520px){
+  #readingHud{top:calc(env(safe-area-inset-top,0px) + 8px);left:12px;right:12px;translate:none;max-width:none;display:grid;grid-template-columns:minmax(0,1fr);gap:3px;padding:8px 11px;border-radius:14px;white-space:normal;overflow:visible;line-height:1.3}
+  .hud-title,.hud-ch{max-width:none;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}
+  .hud-title + .hud-sep{display:none}
+  .hud-right{justify-content:space-between;font-size:10.5px}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -567,9 +575,9 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 .hud-sep{opacity:.45}
 body.cinema #readingHud{background:color-mix(in srgb,#000 74%,transparent);border-color:color-mix(in srgb,var(--amber) 28%,transparent);box-shadow:0 8px 26px rgba(0,0,0,.6)}
 body.pip-window #readingHud{top:10px}
-/* Progress strip under the HUD */
-#hudProgress{position:fixed;top:calc(var(--headerH,66px) + 46px);left:50%;translate:-50% 0;z-index:55;display:flex;gap:16px;align-items:center;max-width:min(92vw,720px);
-  padding:7px 14px;border-radius:999px;background:color-mix(in srgb,var(--overlay) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+/* Progress strip below the HUD */
+#hudProgress{position:fixed;top:calc(var(--headerH,66px) + 46px);left:50%;translate:-50% 0;z-index:55;display:flex;flex-direction:column;gap:6px;align-items:stretch;width:min(92vw,420px);
+  padding:8px 12px;border-radius:14px;background:color-mix(in srgb,var(--overlay) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border:1px solid var(--line2);box-shadow:0 8px 26px rgba(0,0,0,.35)}
 #hudProgress[hidden]{display:none}
 .hud-pr{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1;min-width:0}
@@ -579,13 +587,12 @@ body.pip-window #readingHud{top:10px}
 .hud-fill.ch{background:linear-gradient(90deg,var(--amber2),var(--amber))}
 body.cinema #hudProgress{background:color-mix(in srgb,#000 74%,transparent);border-color:color-mix(in srgb,var(--amber) 28%,transparent);box-shadow:0 8px 26px rgba(0,0,0,.6)}
 body.pip-window #hudProgress{top:44px}
-/* While a book is open, keep the page content clear of the fixed HUD + progress strip
-   so the tabs and controls behind them stay visible at the top of the page. */
-body.book-open main{padding-top:84px}
+/* Keep page text below the fixed reading metadata and progress strip. */
+body.book-open main{padding-top:max(0px,calc(var(--reading-stack-height,140px) - var(--headerH,66px)))}
 body.reading-active{--headerH:0px}
 body.reading-active header{height:0;min-height:0;padding-top:0;padding-bottom:0;border-bottom-width:0;opacity:0;overflow:hidden;pointer-events:none;animation:none}
-body.reading-active #readingHud{top:8px}
-body.reading-active.book-open main{padding-top:48px}
+body.reading-active #readingHud{top:calc(env(safe-area-inset-top,0px) + 8px)}
+body.pip-window .hud-title,body.pip-window .hud-ch{max-width:32vw}
 
 /* ---------- Reading environment: cinema lights-off, full screen, pop-out ---------- */
 header,.mode-row,#chapterRow,#autoRow,#statsRow,#progressRow,#cinemaRow,footer{transition:opacity .5s ease,filter .5s ease}
@@ -797,46 +804,8 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
       <div class="divider"></div>
       <div>
         <label class="lbl" for="ambientMusic">Background music</label>
-        <select id="ambientMusic">
-          <option value="off">Off</option>
-          <optgroup label="Nature / Weather">
-            <option value="nature">Soft rain</option>
-            <option value="blizzard">Harsh blizzard</option>
-            <option value="crickets">Night crickets</option>
-          </optgroup>
-          <optgroup label="Animal voices">
-            <option value="wolf1">Wolf 1 (wolf1.mp3)</option>
-            <option value="wolf2">Wolf 2 (wolf2.mp3)</option>
-            <option value="owl1">Owl 1 (owl1.mp3)</option>
-            <option value="owl2">Owl 2 (owl2.mp3)</option>
-          </optgroup>
-          <optgroup label="Rain recordings">
-            <option value="rain1">Rain 1 (rain1.wav)</option>
-            <option value="rain2">Rain 2 (rain2.wav)</option>
-            <option value="rain3">Rain 3 (rain3.wav)</option>
-            <option value="rain4">Rain 4 (rain4.mp3)</option>
-            <option value="rain5">Rain 5 (rain5.wav)</option>
-            <option value="rain6">Rain 6 (rain6.mp3)</option>
-          </optgroup>
-          <optgroup label="Ambient">
-            <option value="calm">Soft ambient music</option>
-            <option value="soft1">Soft ambient 1 (soft1.mp3)</option>
-            <option value="soft2">Soft ambient 2 (soft2.mp3)</option>
-            <option value="soft3">Soft ambient 3 (soft3.mp3)</option>
-            <option value="soft4">Soft ambient 4 (soft4.mp3)</option>
-            <option value="soft5">Soft ambient 5 (soft5.mp3)</option>
-            <option value="soft6">Soft ambient 6 (soft6.mp3)</option>
-          </optgroup>
-          <optgroup label="Cinematic / Moods">
-            <option value="thriller">Thriller / suspense</option>
-            <option value="action">Action (restrained)</option>
-            <option value="mystery">Mystery / noir</option>
-            <option value="fantasy">Sci-fi / fantasy</option>
-            <option value="fireplace">Tavern fireplace</option>
-          </optgroup>
-          <option value="file">My music file…</option>
-        </select>
-        <p class="hint" style="margin-top:7px">Plays softly while the reader is speaking. Presets are generated locally; choose a file for recorded music.</p>
+        <select id="ambientMusic"><option value="off">Off</option><option value="file">My music file…</option></select>
+        <p class="hint" style="margin-top:7px">Plays while the reader is speaking. Recorded tracks play at their original level; use the volume slider to adjust them.</p>
         <div id="ambientFileWrap" hidden style="margin-top:10px">
           <label class="lbl" for="ambientFile">Choose an audio or video file</label>
           <input type="file" id="ambientFile" accept="audio/*,video/mp4,video/webm,video/ogg">
@@ -845,7 +814,7 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
       </div>
       <div>
         <label class="lbl" for="ambientVolume">Music volume</label>
-        <div class="field-row"><input type="range" id="ambientVolume" min="0" max="0.2" step="0.01" value="0.08"><span class="val-badge" id="ambientVolumeValue">40%</span></div>
+        <div class="field-row"><input type="range" id="ambientVolume" min="0" max="1" step="0.01" value="1"><span class="val-badge" id="ambientVolumeValue">100%</span></div>
       </div>
       <div class="divider"></div>
       <div><label class="lbl" for="voiceSelect">Voice</label>
@@ -1189,13 +1158,65 @@ function speechTransform(text, baseOffset = 0){
 }
 
 /* ---------- Settings ---------- */
+function numberedAmbientTracks(prefix, count, label){
+  return Array.from({length:count}, (_, index) => {
+    const key = `${prefix}${index + 1}`;
+    return [key, `${label} ${index + 1}`, `audio/${key}.mp3`];
+  });
+}
+const AMBIENT_TRACK_GROUPS = [
+  {label:"Nature / Weather", tracks:[
+    ...numberedAmbientTracks("rain",6,"Rain"),
+    ...numberedAmbientTracks("soft-rain",7,"Soft rain"),
+    ...numberedAmbientTracks("blizzard",8,"Blizzard"),
+    ...numberedAmbientTracks("cricket",7,"Night crickets"),
+    ["nature","Soft rain (generated)"],["blizzard","Harsh blizzard (generated)"],["crickets","Night crickets (generated)"]
+  ]},
+  {label:"Animals & Wildlife", tracks:[
+    ["bird1","Birdsong"],...numberedAmbientTracks("jungle",4,"Jungle"),
+    ...numberedAmbientTracks("owl",2,"Owl"),...numberedAmbientTracks("wolf",2,"Wolf")
+  ]},
+  {label:"Ambient", tracks:[
+    ...numberedAmbientTracks("soft-ambient",7,"Soft ambient"),
+    ...numberedAmbientTracks("soft",10,"Soundscape"),["calm","Soft ambient music (generated)"]
+  ]},
+  {label:"Cinematic / Moods", tracks:[
+    ...numberedAmbientTracks("thriller",8,"Thriller"),
+    ...numberedAmbientTracks("action",7,"Action"),
+    ...numberedAmbientTracks("mystery",2,"Mystery"),
+    ...numberedAmbientTracks("fantasy",8,"Fantasy"),
+    ...numberedAmbientTracks("sci-fi",8,"Sci-fi"),
+    ["thriller","Thriller / suspense (generated)"],["action","Action (generated)"],
+    ["mystery","Mystery / noir (generated)"],["fantasy","Fantasy (generated)"],
+    ["fireplace","Tavern fireplace (generated)"]
+  ]}
+];
+const AMBIENT_TRACKS = Object.fromEntries(AMBIENT_TRACK_GROUPS.flatMap(group =>
+  group.tracks.filter(track => track[2]).map(([key,,path]) => [key,path])
+));
+const SYNTH_AMBIENT_MODES = ["nature","blizzard","crickets","calm","thriller","action","mystery","fantasy","fireplace"];
+function populateAmbientMusicOptions(){
+  const select = $("ambientMusic");
+  const fileOption = select.querySelector('option[value="file"]');
+  for(const group of AMBIENT_TRACK_GROUPS){
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group.label;
+    for(const [value,label] of group.tracks){
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      optgroup.appendChild(option);
+    }
+    select.insertBefore(optgroup, fileOption);
+  }
+}
 const DEFAULTS = {
   voiceURI:"auto", speechLang:"auto", rate:1, font:"Literata", size:19,
   highlight:"sentence+word", autoScroll:true, autoTranslate:"off",
   translateStyle:"simple", translateEngine:"google", genderOn:true, genderFix:{},
   autoContinue:true, webAutoContinue:true, theme:"dark",
   readerTheme:"dark", readerBg:"#050505", readerText:"#ffffff",
-  ambientMusic:"off", ambientVolume:0.08,
+  ambientMusic:"off", ambientVolume:1, ambientVolumeScale:1,
   skipEnabled:true, skipList:DEFAULT_SKIP, pronEnabled:true,
   pronRules:DEFAULT_PRON.map(([from,to]) => ({from, to, on:true}))
 };
@@ -1204,9 +1225,19 @@ function loadSettings(){
   try{ saved = JSON.parse(localStorage.getItem("upr.settings") || "{}"); }catch(e){}
   const s = Object.assign({}, DEFAULTS, saved);
   if(!Array.isArray(s.pronRules)) s.pronRules = DEFAULTS.pronRules.map(r => ({...r}));
-  if(s.ambientMusic === "file" || !["off","calm","fantasy","mystery","nature","blizzard","crickets","thriller","action","fireplace","wolf1","wolf2","owl1","owl2","rain1","rain2","rain3","rain4","rain5","rain6","soft1","soft2","soft3","soft4","soft5","soft6"].includes(s.ambientMusic)) s.ambientMusic = DEFAULTS.ambientMusic;
-  const volume = Number(s.ambientVolume);
-  s.ambientVolume = Number.isFinite(volume) ? clamp(volume, 0, 0.2) : DEFAULTS.ambientVolume;
+  if(s.ambientMusic === "file" || (s.ambientMusic !== "off" && !AMBIENT_TRACKS[s.ambientMusic] && !SYNTH_AMBIENT_MODES.includes(s.ambientMusic))) s.ambientMusic = DEFAULTS.ambientMusic;
+  if(saved.ambientVolumeScale === 1){
+    const volume = Number(s.ambientVolume);
+    s.ambientVolume = Number.isFinite(volume) ? clamp(volume, 0, 1) : DEFAULTS.ambientVolume;
+  }else if(Object.prototype.hasOwnProperty.call(saved, "ambientVolume")){
+    const volume = Number(saved.ambientVolume);
+    s.ambientVolume = Number.isFinite(volume) ? clamp(volume, 0, 0.2) / 0.2 : DEFAULTS.ambientVolume;
+    s.ambientVolumeScale = 1;
+    try{ localStorage.setItem("upr.settings", JSON.stringify(s)); }catch(error){ console.warn("Could not save the updated music volume setting.", error); }
+  }else{
+    s.ambientVolume = DEFAULTS.ambientVolume;
+    s.ambientVolumeScale = 1;
+  }
   return s;
 }
 function saveSettings(){ try{ localStorage.setItem("upr.settings", JSON.stringify(S.settings)); }catch(e){} }
@@ -1542,6 +1573,19 @@ function savedChapterPct(book, i){
   const pages = Math.max(1, pg.pages || 1);
   return clamp(Math.round(((pg.page || 0) / pages) * 100), 0, 100);
 }
+function layoutReadingOverlays(){
+  const hud = $("readingHud");
+  if(!hud) return;
+  const hudBottom = hud.hidden ? 8 : hud.getBoundingClientRect().bottom;
+  const barTop = Math.ceil(hudBottom + 8);
+  const progressRow = $("progressRow"), hudProgress = $("hudProgress");
+  for(const bar of [progressRow,hudProgress]){
+    if(bar && !bar.hidden && !document.body.classList.contains("pip-window")) bar.style.top = barTop + "px";
+  }
+  let stackBottom = hudBottom;
+  if(hudProgress && !hudProgress.hidden) stackBottom = Math.max(stackBottom,hudProgress.getBoundingClientRect().bottom);
+  document.body.style.setProperty("--reading-stack-height",Math.ceil(stackBottom + 16) + "px");
+}
 function updateStats(){
   const total = S.pages.reduce((a, p) => a + p.words, 0);
   const page = S.pages[S.pageIdx];
@@ -1696,7 +1740,20 @@ function highlightUnit(u, orig, scroll = true){
   if(scroll && S.settings.autoScroll && (targetWEl || sEl)){
     const targetEl = targetWEl || sEl;
     const r = targetEl.getBoundingClientRect();
-    if(r.top < 90 || r.bottom > innerHeight - 130) targetEl.scrollIntoView({block:"center", behavior:"smooth"});
+    const overlays = [$("readingHud"),$("progressRow"),$("hudProgress")];
+    let safeTop = 12;
+    for(const overlay of overlays){
+      if(!overlay || overlay.hidden) continue;
+      const rect = overlay.getBoundingClientRect();
+      if(rect.top < innerHeight && rect.bottom > 0) safeTop = Math.max(safeTop,rect.bottom + 12);
+    }
+    const transport = $("transport");
+    const transportTop = transport ? transport.getBoundingClientRect().top : innerHeight;
+    const safeBottom = Math.max(safeTop + 80,Math.min(innerHeight - 24,transportTop - 12));
+    if(r.top < safeTop || r.bottom > safeBottom){
+      const targetTop = safeTop + (safeBottom - safeTop) * 0.4;
+      window.scrollBy({top:r.top - targetTop,behavior:"smooth"});
+    }
   }
 }
 
@@ -2041,13 +2098,6 @@ const AMBIENT_MOODS = {
   action:{cutoff:1300,noise:0,noiseCutoff:1200,interval:5000,chords:[[130.81,196,261.63,329.63],[146.83,220,293.66,369.99],[110,164.81,220,293.66],[164.81,246.94,329.63,392]],effect:"pulse"},
   fireplace:{cutoff:780,noise:0.035,noiseCutoff:850,interval:16000,chords:[[82.41,123.47,164.81,196],[73.42,110,146.83,185],[87.31,130.81,174.61,207.65],[65.41,98,146.83,174.61]],effect:"crackle"}
 };
-const AMBIENT_TRACKS = {
-  wolf1:"audio/wolf1.mp3", wolf2:"audio/wolf2.mp3", owl1:"audio/owl1.mp3", owl2:"audio/owl2.mp3",
-  rain1:"audio/rain1.wav", rain2:"audio/rain2.wav", rain3:"audio/rain3.wav",
-  rain4:"audio/rain4.mp3", rain5:"audio/rain5.wav", rain6:"audio/rain6.mp3",
-  soft1:"audio/soft1.mp3", soft2:"audio/soft2.mp3", soft3:"audio/soft3.mp3",
-  soft4:"audio/soft4.mp3", soft5:"audio/soft5.mp3", soft6:"audio/soft6.mp3"
-};
 let ambientContext = null, ambientMaster = null, ambientFilter = null, ambientVoices = [];
 let ambientNoiseFilter = null, ambientNoiseGain = null, ambientEffectOscillator = null, ambientEffectGain = null;
 let ambientFileAudio = null, ambientFileUrl = "", ambientAudioSource = "", ambientAudioGeneration = 0;
@@ -2157,6 +2207,9 @@ function setAmbientAudioSource(source){
   ambientErrorShown = false;
   ambientFileAudio.load();
 }
+function ambientOutputVolume(){
+  return clamp(Number(S.settings.ambientVolume), 0, 1);
+}
 function syncAmbientFile(shouldPlay, source){
   if(source) setAmbientAudioSource(source);
   if(!ambientFileAudio) return;
@@ -2164,7 +2217,7 @@ function syncAmbientFile(shouldPlay, source){
     if(!ambientFileAudio.paused) ambientFileAudio.pause();
     return;
   }
-  ambientFileAudio.volume = clamp(Number(S.settings.ambientVolume), 0, 0.2);
+  ambientFileAudio.volume = ambientOutputVolume();
   if(shouldPlay){
     if(ambientFileAudio.paused) ambientFileAudio.play().catch(error => {
       if(error && error.name === "AbortError") return;
@@ -2231,7 +2284,7 @@ function syncAmbientMusic(){
   if(ambientContext.state === "suspended") ambientContext.resume().catch(reportAmbientError);
   const now = ambientContext.currentTime;
   ambientMaster.gain.cancelScheduledValues(now);
-  ambientMaster.gain.setTargetAtTime(clamp(Number(S.settings.ambientVolume), 0, 0.2), now, 0.7);
+  ambientMaster.gain.setTargetAtTime(ambientOutputVolume(), now, 0.7);
   if(ambientMoodKey !== S.settings.ambientMusic){
     clearTimeout(ambientChordTimer);
     clearTimeout(ambientEffectTimer);
@@ -2354,12 +2407,13 @@ function syncHud(){
   const hud = $("readingHud"); if(!hud) return;
   hud.hidden = !S.book;
   document.body.classList.toggle("book-open", !!S.book);
-  if(!S.book) return;
+  if(!S.book){ layoutReadingOverlays(); return; }
   const set = (id, v) => { const n = $(id); if(n && n.textContent !== v) n.textContent = v; };
   set("hudTitle", S.book.title || "Untitled");
   set("hudCh", ($("chTitle").textContent || "").trim() || "Chapter");
   set("hudTime", $("timeLeft").textContent);
   set("hudPage", $("pageInfo").textContent);
+  layoutReadingOverlays();
   syncPip();
 }
 setInterval(syncHud, 700);
@@ -4463,7 +4517,8 @@ function syncHeaderHeight(){
 function init(){
   if(!ttsOK) $("speechWarning").hidden = false;
   syncHeaderHeight();
-  addEventListener("resize", syncHeaderHeight);
+  addEventListener("resize", () => { syncHeaderHeight(); layoutReadingOverlays(); });
+  if(window.visualViewport) window.visualViewport.addEventListener("resize", layoutReadingOverlays);
   addEventListener("orientationchange", () => setTimeout(syncHeaderHeight, 180));
   setTimeout(syncHeaderHeight, 800);
 
@@ -4483,9 +4538,10 @@ function init(){
 
   seedLibrary();
   applyAppearance();
+  populateAmbientMusicOptions();
   $("ambientMusic").value = S.settings.ambientMusic;
   $("ambientVolume").value = S.settings.ambientVolume;
-  $("ambientVolumeValue").textContent = Math.round(S.settings.ambientVolume / 0.2 * 100) + "%";
+  $("ambientVolumeValue").textContent = Math.round(S.settings.ambientVolume * 100) + "%";
   $("ambientVolume").disabled = S.settings.ambientMusic === "off";
   updateAmbientFileControls();
   renderSkipChips();
@@ -4760,8 +4816,8 @@ function init(){
   };
   $("ambientFile").onchange = e => loadAmbientFile(e.target.files && e.target.files[0]);
   $("ambientVolume").oninput = e => {
-    S.settings.ambientVolume = clamp(+e.target.value, 0, 0.2);
-    $("ambientVolumeValue").textContent = Math.round(S.settings.ambientVolume / 0.2 * 100) + "%";
+    S.settings.ambientVolume = clamp(+e.target.value, 0, 1);
+    $("ambientVolumeValue").textContent = Math.round(S.settings.ambientVolume * 100) + "%";
     saveSettings(); syncAmbientMusic();
   };
   $("highlightSelect").onchange = e => { S.settings.highlight = e.target.value; saveSettings(); const u = currentUnit(); if(u && (S.playing || $("content").querySelector(".hl-w,.hl-s,.hl-p"))) highlightUnit(u, u.start, false); };
