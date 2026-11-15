@@ -528,7 +528,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
   box-shadow:inset -5px -7px 12px rgba(120,70,0,.35),0 6px 22px var(--glow);animation:orbFloat 3.2s ease-in-out infinite}
 /* Closed: the other buttons hide inside the sphere */
 #transport.orb .tbtn:not(.play){position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;flex:none;border-width:1px;opacity:0;pointer-events:none;
-  transform:translate(0,0) scale(.2);background:color-mix(in srgb,var(--overlay) 92%,transparent);border-color:var(--line2);box-shadow:0 8px 22px rgba(0,0,0,.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  transform:translate(0,0) scale(.2);background:color-mix(in srgb,var(--overlay) 96%,transparent);border-color:var(--line2);box-shadow:0 8px 22px rgba(0,0,0,.4)}
 /* Slot order + stagger for the fan-out (play stays in the sphere centre) */
 #transport.orb .tbtn:nth-child(1){--i:1;--d:0s}
 #transport.orb .tbtn:nth-child(2){--i:2;--d:.03s}
@@ -568,7 +568,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 /* ---------- Reading HUD: title, chapter, time & page stay visible in every mode ---------- */
 #readingHud{position:fixed;top:calc(var(--headerH,66px) + 8px);left:50%;translate:-50% 0;z-index:55;display:flex;align-items:center;gap:7px;max-width:min(92vw,720px);
   padding:6px 14px;border-radius:999px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;
-  background:color-mix(in srgb,var(--overlay) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  background:color-mix(in srgb,var(--overlay) 96%,transparent);
   border:1px solid var(--line2);box-shadow:0 8px 26px rgba(0,0,0,.35);animation:fadeDown .5s .1s ease both}
 #readingHud[hidden]{display:none}
 .hud-title{font-weight:700;color:var(--amber2);overflow:hidden;text-overflow:ellipsis;max-width:32vw}
@@ -580,7 +580,7 @@ body.cinema #readingHud{background:color-mix(in srgb,#000 74%,transparent);borde
 body.pip-window #readingHud{top:10px}
 /* Progress strip below the HUD */
 #hudProgress{position:fixed;top:calc(var(--headerH,66px) + 46px);left:50%;translate:-50% 0;z-index:55;display:flex;flex-direction:column;gap:6px;align-items:stretch;width:min(92vw,420px);
-  padding:8px 12px;border-radius:14px;background:color-mix(in srgb,var(--overlay) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  padding:8px 12px;border-radius:14px;background:color-mix(in srgb,var(--overlay) 97%,transparent);
   border:1px solid var(--line2);box-shadow:0 8px 26px rgba(0,0,0,.35)}
 #hudProgress[hidden]{display:none}
 .hud-pr{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1;min-width:0}
@@ -608,7 +608,7 @@ body.cinema .reader-card{border-color:color-mix(in srgb,var(--amber) 26%,transpa
 .cinema-auto{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-left:auto;cursor:pointer;user-select:none}
 .btn.active{border-color:var(--amber);color:var(--amber2);background:color-mix(in srgb,var(--amber) 12%,var(--surface))}
 #cinemaBar{position:fixed;top:calc(var(--headerH,66px) + 92px);left:50%;translate:-50% 0;z-index:56;display:flex;gap:6px;padding:5px;border-radius:999px;
-  background:color-mix(in srgb,var(--overlay) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  background:color-mix(in srgb,var(--overlay) 96%,transparent);
   border:1px solid var(--line2);box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .35s,translate .35s}
 body.cinema #cinemaBar{opacity:1;pointer-events:auto}
 body.cinema.cinema-idle #cinemaBar{opacity:0;pointer-events:none}
@@ -617,7 +617,7 @@ body.cinema.cinema-idle #cinemaBar{opacity:0;pointer-events:none}
 body.pip-window{margin:0;padding:14px;min-height:100vh}
 body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(100% - 28px)}
 .pip-dock{position:fixed;bottom:14px;left:50%;translate:-50% 0;display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:999px;z-index:60;
-  background:color-mix(in srgb,var(--overlay) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  background:color-mix(in srgb,var(--overlay) 96%,transparent);
   border:1px solid var(--line2);box-shadow:0 14px 44px rgba(0,0,0,.4)}
 .pip-dock .tbtn{width:42px;height:42px;border-radius:50%;border:1px solid transparent;background:transparent;color:var(--text);font-size:16px;cursor:pointer;display:grid;place-items:center;flex:none}
 .pip-dock .tbtn:hover{background:var(--surface2);border-color:var(--line2)}
