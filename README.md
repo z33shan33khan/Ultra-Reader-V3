@@ -116,6 +116,16 @@ Narration can play over a soft layer of sound that follows play/pause automatica
 - **Pop-out:** uses the Document Picture-in-Picture API on Chromium desktop browsers; other browsers gracefully fall back to lights-off reading
 - **Privacy:** there is no backend, no analytics, no account. Everything stays in your browser
 
+## ⚡ Performance
+
+Tuned for fast loading and lag-free reading, especially on mobile Chrome:
+
+- **Fast first paint** — only the two reading fonts (Literata + Inter) block rendering; the heavy CJK/Urdu/Arabic fonts load in the background and pdf.js (~350 KB) is fetched **on demand, only when you import a PDF**
+- **No expensive repaint loops** — the fixed bars use near-opaque backgrounds instead of `backdrop-filter` blur (which forces constant re-compositing on phone GPUs), and the playing-button pulse is transform-only (compositor-driven, zero repaints)
+- **Cheap word highlighting** — the highlighted word keeps its line shape stable (no per-word `font-weight` re-layout of the whole line)
+- **Lighter while idle** — the HUD ticker pauses when the tab is hidden, and paragraphs use style/layout containment so highlight updates touch as little of the page as possible
+
+
 ## ✅ Browser Support
 
 | Browser | Reading | Pop-out window | Notes |
