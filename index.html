@@ -1034,6 +1034,9 @@ const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const uid = () => 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const ttsOK = 'speechSynthesis' in window;
 const isMobileSpeech = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+/* Calibrated ms-per-character (at rate 1×) measured from real speech, so the
+   mobile no-boundary-event highlight estimator stays in sync with the voice. */
+let speechMsPerCharBase = 0;
 const PAGE_WORDS = 420;
 const synth = window.speechSynthesis;
 
@@ -1169,32 +1172,27 @@ const AMBIENT_TRACK_GROUPS = [
     ...numberedAmbientTracks("rain",6,"Rain"),
     ...numberedAmbientTracks("soft-rain",7,"Soft rain"),
     ...numberedAmbientTracks("blizzard",8,"Blizzard"),
-    ...numberedAmbientTracks("cricket",7,"Night crickets"),
-    ["nature","Soft rain (generated)"],["blizzard","Harsh blizzard (generated)"],["crickets","Night crickets (generated)"]
+    ...numberedAmbientTracks("cricket",7,"Night crickets")
   ]},
   {label:"Animals & Wildlife", tracks:[
-    ["bird1","Birdsong"],...numberedAmbientTracks("jungle",4,"Jungle"),
+    ["bird1","Birdsong","audio/bird1.mp3"],...numberedAmbientTracks("jungle",4,"Jungle"),
     ...numberedAmbientTracks("owl",2,"Owl"),...numberedAmbientTracks("wolf",2,"Wolf")
   ]},
   {label:"Ambient", tracks:[
     ...numberedAmbientTracks("soft-ambient",7,"Soft ambient"),
-    ...numberedAmbientTracks("soft",10,"Soundscape"),["calm","Soft ambient music (generated)"]
+    ...numberedAmbientTracks("soft",10,"Soundscape")
   ]},
   {label:"Cinematic / Moods", tracks:[
     ...numberedAmbientTracks("thriller",8,"Thriller"),
     ...numberedAmbientTracks("action",7,"Action"),
     ...numberedAmbientTracks("mystery",2,"Mystery"),
     ...numberedAmbientTracks("fantasy",8,"Fantasy"),
-    ...numberedAmbientTracks("sci-fi",8,"Sci-fi"),
-    ["thriller","Thriller / suspense (generated)"],["action","Action (generated)"],
-    ["mystery","Mystery / noir (generated)"],["fantasy","Fantasy (generated)"],
-    ["fireplace","Tavern fireplace (generated)"]
+    ...numberedAmbientTracks("sci-fi",8,"Sci-fi")
   ]}
 ];
 const AMBIENT_TRACKS = Object.fromEntries(AMBIENT_TRACK_GROUPS.flatMap(group =>
   group.tracks.filter(track => track[2]).map(([key,,path]) => [key,path])
 ));
-const SYNTH_AMBIENT_MODES = ["nature","blizzard","crickets","calm","thriller","action","mystery","fantasy","fireplace"];
 function populateAmbientMusicOptions(){
   const select = $("ambientMusic");
   const fileOption = select.querySelector('option[value="file"]');
@@ -1225,7 +1223,7 @@ function loadSettings(){
   try{ saved = JSON.parse(localStorage.getItem("upr.settings") || "{}"); }catch(e){}
   const s = Object.assign({}, DEFAULTS, saved);
   if(!Array.isArray(s.pronRules)) s.pronRules = DEFAULTS.pronRules.map(r => ({...r}));
-  if(s.ambientMusic === "file" || (s.ambientMusic !== "off" && !AMBIENT_TRACKS[s.ambientMusic] && !SYNTH_AMBIENT_MODES.includes(s.ambientMusic))) s.ambientMusic = DEFAULTS.ambientMusic;
+  if(s.ambientMusic !== "off" && s.ambientMusic !== "file" && !AMBIENT_TRACKS[s.ambientMusic]) s.ambientMusic = DEFAULTS.ambientMusic;
   if(saved.ambientVolumeScale === 1){
     const volume = Number(s.ambientVolume);
     s.ambientVolume = Number.isFinite(volume) ? clamp(volume, 0, 1) : DEFAULTS.ambientVolume;
@@ -1751,8 +1749,10 @@ function highlightUnit(u, orig, scroll = true){
     const transportTop = transport ? transport.getBoundingClientRect().top : innerHeight;
     const safeBottom = Math.max(safeTop + 80,Math.min(innerHeight - 24,transportTop - 12));
     if(r.top < safeTop || r.bottom > safeBottom){
-      const targetTop = safeTop + (safeBottom - safeTop) * 0.4;
-      window.scrollBy({top:r.top - targetTop,behavior:"smooth"});
+      /* Keep the narrated line just below the fixed overlays: whenever the voice
+         moves to a line that sits too low (or was scrolled away), the page
+         shifts it to the top so it is fully on screen while it is read. */
+      window.scrollBy({top:r.top - safeTop - 8, behavior:"smooth"});
     }
   }
 }
@@ -1840,14 +1840,23 @@ function startHlFallback(batch, g){
   stopHlFallback();
   if(!isMobileSpeech) return;
   if(!["word","sentence+word","paragraph+word"].includes(S.settings.highlight)) return;
-  const ws = wordSpans(batch.spoken || "");
+  const spokenText = batch.spoken || "";
+  const ws = wordSpans(spokenText);
   if(ws.length < 2) return;
   const rate = Math.max(0.5, S.settings.rate) || 1;
+  const perChar = (speechMsPerCharBase > 20 ? speechMsPerCharBase : 62) / rate;
   const t0 = performance.now();
   let acc = 0;
   const starts = ws.map(w => {
     const s = acc;
-    acc += Math.max(130, (w.e - w.s) * 62 / rate);
+    // natural pause after punctuation that follows this word
+    let j = w.e;
+    while(j < spokenText.length && /\s/.test(spokenText[j])) j++;
+    const ch = spokenText[j];
+    let pause = 0;
+    if(ch == null || ".!?。！？…".includes(ch)) pause = 420;
+    else if(",;:、，；：".includes(ch)) pause = 170;
+    acc += Math.max(130, (w.e - w.s) * perChar) + pause / rate;
     return s;
   });
   let lastIdx = -1;
@@ -1885,7 +1894,9 @@ function buildSpeechBatch(startIndex){
   let spoken = "", endIndex = startIndex - 1;
   for(let i = startIndex; i < page.units.length; i++){
     const unit = page.units[i];
-    if(i > startIndex && (unit.p !== first.p || units.length >= 4)) break;
+    // Mobile: one sentence per utterance so the highlight re-syncs perfectly at
+    // every sentence start (Android sends no word-boundary events to follow).
+    if(i > startIndex && (unit.p !== first.p || units.length >= (isMobileSpeech ? 1 : 4))) break;
     const transformed = speechTransform(unit.text, unit.start || 0);
     const part = transformed.spoken;
     const separator = spoken && part && !/\s$/.test(spoken) && !/^\s/.test(part) ? " " : "";
@@ -1947,6 +1958,14 @@ function speakUnit(retryAttempt){
   ut.onend = () => {
     clearTimeout(boundaryTimer); stopHlFallback(); clearTimeout(wdTimer); stallRetries = 0;
     if(activeUtterance === ut) activeUtterance = null;
+    // Learn the real speaking speed from this utterance to keep the mobile
+    // word-estimator calibrated (falls back to the built-in guess until then).
+    if(started && spoken.length > 40){
+      const ms = (performance.now() - utStart) / spoken.length * Math.max(0.5, S.settings.rate);
+      if(Number.isFinite(ms) && ms > 5 && ms < 400){
+        speechMsPerCharBase = speechMsPerCharBase ? speechMsPerCharBase * 0.75 + ms * 0.25 : ms;
+      }
+    }
     if(g === gen){ pos.u = batch.endIndex; nextUnit(); }
   };
   ut.onerror = e => {

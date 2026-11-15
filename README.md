@@ -2,7 +2,7 @@
 
 A single-file, privacy-first **read-aloud novel reader** that runs entirely in your browser — no install, no server, no account. Import your books (.epub, .pdf, .txt, .md), have them read aloud with highlighting, read translated web novels with gender-aware translation, and enjoy a distraction-free **cinema reading environment**.
 
-> One file. `Ultra-Reader-Version4.html`. Open it and start reading.
+> One file. Open `index.html` and start reading — or use the hosted version at **https://z33shan33khan.github.io/Ultra-Reader-V3/**
 
 ---
 
@@ -25,6 +25,8 @@ A single-file, privacy-first **read-aloud novel reader** that runs entirely in y
 - **Sentence skip buttons** (⏮/⏭), page skip («/»), stop, and play/pause
 - **Auto-continue** to the next chapter when one finishes
 - **Keeps reading reliably on mobile** — wake-lock keeps the screen on, and a watchdog restarts speech if the phone silences it in the background (no more stalling mid-chapter)
+- **Tight highlight sync on mobile** — Android Chrome sends no word-boundary events, so the reader speaks **one sentence per utterance** (the highlight re-snaps exactly at every sentence) and **learns your voice's real speaking speed** as it reads, keeping word highlighting on the word you're hearing
+- **Follow-the-voice scrolling** — whenever the line being read slips below the visible area, the page immediately shifts it to the top of the screen (just under the HUD), so the narrated text is always fully in view
 - **Pronunciation rules** — teach it names ("Qi → Chi", "Xiao → Shiao"); combined names are auto-split into syllables. Audio only, text untouched
 - **Skip lists** — automatically skip headings, author notes, etc.
 - Adjustable speed, voice, pitch and more
@@ -62,6 +64,16 @@ plus a second strip with live **BOOK %** and **CHAPTER %** progress bars. Presen
 - **Auto-saved forever**: book text is stored in **IndexedDB** (hundreds of MB of space), so novels survive closing the site — no re-uploading the same document every visit
 - **💾 Backup / 📥 Restore** — export your whole library (books + bookmarks + progress) to a single `.json` file, keep it on your PC or a USB drive, and restore it anywhere (great for moving devices or as a safety net)
 
+### 🌧 Background Music & Ambience
+Narration can play over a soft layer of sound that follows play/pause automatically:
+- **87 bundled recordings** (no synthetic/generated presets), organized by genre:
+  - **Nature / Weather** — Rain 1–6, Soft rain 1–7, Blizzard 1–8, Night crickets 1–7
+  - **Animals & Wildlife** — Birdsong, Jungle 1–4, Owls 1–2, Wolves 1–2
+  - **Ambient** — Soft ambient 1–7, Soundscapes 1–10
+  - **Cinematic / Moods** — Thriller 1–8, Action 1–7, Mystery 1–2, Fantasy 1–8, Sci-fi 1–8
+- **🎵 My music file…** — pick any audio (or video) file from your own device to use as ambience; it plays locally and is never uploaded
+- Its own volume slider, independent of the narration volume
+
 ### 🎨 Comfort & Appearance
 - Dark & light themes, custom reader fonts (including installed system fonts), adjustable text size
 - Clean typography (Literata) and a warm parchment design
@@ -71,7 +83,7 @@ plus a second strip with live **BOOK %** and **CHAPTER %** progress bars. Presen
 ## 🚀 Getting Started
 
 1. **Host it or open it**
-   - Easiest: push `Ultra-Reader-Version4.html` to a GitHub repo and enable **GitHub Pages** — then open the URL on any device (you can also "Add to Home Screen" on a phone for an app-like feel)
+   - Easiest: this repo is already live on **GitHub Pages** — open https://z33shan33khan.github.io/Ultra-Reader-V3/ on any device (you can also "Add to Home Screen" on a phone for an app-like feel)
    - Or simply double-click the file to open it locally
 2. **Add a book**: 📂 open a file, 📋 paste text, or 🌐 load from a website
 3. **Press ▶** — the app folds into the edge-docked orb, lights go off (if Auto with play is on), and your book is read aloud
