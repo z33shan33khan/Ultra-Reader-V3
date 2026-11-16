@@ -10,6 +10,7 @@ A single-file, privacy-first **read-aloud novel reader** that runs entirely in y
 
 ### 📖 Reading & Library
 - **Import almost anything** — `.epub`, `.pdf`, `.txt`, `.md`, `.html` files, pasted text, or chapters straight from a website
+- **📚 Browse web-novel sources** — pick a source (NovelFull, AllNovelFull), search, and import a chapter range (up to 150 per batch) straight into your library; long novels load their chapter lists lazily so chapter 500 imports as easily as chapter 1
 - **Smart chapter splitting** — detects `Chapter 1`, `第一章`, prologue/epilogue headings, and Chinese numerals
 - **Chapter tree & page list** — browse chapters with word counts, expand/collapse all
 - **Library with search & sorting** (title A→Z, recently added, chapter count)
@@ -85,7 +86,7 @@ Narration can play over a soft layer of sound that follows play/pause automatica
 1. **Host it or open it**
    - Easiest: this repo is already live on **GitHub Pages** — open https://z33shan33khan.github.io/Ultra-Reader-V3/ on any device (you can also "Add to Home Screen" on a phone for an app-like feel)
    - Or simply double-click the file to open it locally
-2. **Add a book**: 📂 open a file, 📋 paste text, or 🌐 load from a website
+2. **Add a book**: 📂 open a file, 📋 paste text, 🌐 load from a website, or 📚 browse web-novel sources and import chapters
 3. **Press ▶** — the app folds into the edge-docked orb, lights go off (if Auto with play is on), and your book is read aloud
 
 > Tip: the transport bar stays at the bottom centre when paused, and folds into the edge orb while reading.
