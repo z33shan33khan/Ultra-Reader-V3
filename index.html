@@ -290,6 +290,18 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 26px;display:flex;align-item
 .lib-toolbar{display:flex;gap:8px;flex-wrap:wrap}
 .lib-toolbar input{flex:1;min-width:140px}
 .lib-toolbar select{width:auto}
+.src-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.src-controls input[type=text]{flex:1;min-width:140px}
+.src-controls select{width:auto}
+.src-range-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.src-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;max-height:44vh;overflow-y:auto}
+.src-card{text-align:center;cursor:pointer;border:1px solid var(--line2);border-radius:11px;padding:9px;background:var(--overlay);transition:border-color .15s}
+.src-card:hover{border-color:var(--amber)}
+.src-card img{width:88px;height:118px;object-fit:cover;border-radius:8px;background:var(--surface2)}
+.src-card .t{display:block;font-size:12px;margin-top:7px;line-height:1.35;max-height:3.4em;overflow:hidden}
+.src-novel-head{display:flex;gap:12px;align-items:flex-start}
+.src-novel-head img{width:74px;height:100px;object-fit:cover;border-radius:9px;background:var(--surface2)}
+.src-novel-head h4{font-family:'Literata',serif;font-size:16px;margin:0 0 4px}
 #toasts{position:fixed;left:16px;bottom:96px;z-index:120;display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 32px))}
 .toast{display:flex;align-items:center;gap:12px;background:var(--overlay);border:1px solid var(--line2);border-left:3px solid var(--amber);border-radius:11px;padding:11px 14px;font-size:13px;box-shadow:0 12px 34px rgba(0,0,0,.4);animation:toastIn .3s cubic-bezier(.3,1.3,.5,1) both}
 .toast.out{animation:toastOut .3s ease both}
@@ -662,6 +674,7 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
   <div class="mode-row">
     <button class="btn icon-btn" id="btnOpenWeb" title="Open web page">🌐</button>
     <button class="btn icon-btn" id="btnPaste" title="Paste text">📋</button>
+    <button class="btn icon-btn" id="btnSources" title="Browse web novel sources">📚</button>
     <button class="btn icon-btn" id="btnOpenFile" title="Open file (.txt, .md, .html, .epub, .pdf)">📂</button>
     <div class="seg" role="tablist">
       <button id="tabReader" class="active" role="tab">Reader</button>
@@ -995,6 +1008,41 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
       <input type="text" id="pasteTitle" placeholder="Title">
       <textarea id="pasteText" rows="9" placeholder="Paste your chapter or story here…"></textarea>
       <button class="btn primary" id="btnPasteAdd">Add &amp; read</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalSources" hidden>
+  <div class="modal-panel">
+    <div class="modal-head"><h3>Browse web novel sources</h3><button class="x" data-close>×</button></div>
+    <div class="modal-body">
+      <div class="src-controls">
+        <select id="srcSource" title="Source site"></select>
+        <input type="text" id="srcQuery" placeholder="Search novels…">
+        <button class="btn primary" id="btnSrcSearch">Search</button>
+      </div>
+      <div id="srcStatus" class="hint"></div>
+      <div id="srcResults" class="src-results"></div>
+      <div id="srcNovelPanel" hidden>
+        <button class="btn" id="btnSrcBack">← Back to results</button>
+        <div class="src-novel-head">
+          <img id="srcNovelCover" alt="" hidden>
+          <div>
+            <h4 id="srcNovelTitle"></h4>
+            <p id="srcNovelCount" class="hint"></p>
+          </div>
+        </div>
+        <div class="src-controls">
+          <label class="src-range-label">From chapter
+            <input type="number" id="srcFrom" value="1" min="1" style="width:5.5rem">
+            to
+            <input type="number" id="srcTo" value="10" min="1" style="width:5.5rem">
+          </label>
+          <button class="btn primary" id="btnSrcImport">Import chapters</button>
+        </div>
+        <button class="btn" id="btnSrcStop" hidden>Stop importing</button>
+        <div id="srcImportStatus" class="hint"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -5025,6 +5073,277 @@ function init(){
     closeModals(); openBook(book.id, {resume:false});
     toast(`Added “${title}” to your library.`);
   };
+  /* ---------- Web novel sources (QuickNovel / LNReader style) ---------- */
+  const NOVEL_SOURCES = [
+    { id: 'novelfull', name: 'NovelFull', base: 'https://novelfull.com' },
+    { id: 'allnovelfull', name: 'AllNovelFull', base: 'https://allnovelfull.com' }
+  ];
+  /* Proxies for cross-origin fetching. allorigins/codetabs are often down, so
+     the list is raced and the first proxy that answers is remembered for the
+     rest of the session (kept first in the order). */
+  const SRC_PROXIES = [
+    { name: 'direct', build: u => u, timeout: 9000 },
+    { name: 'rendered page', build: u => 'https://r.jina.ai/' + u, headers: { 'X-Return-Format': 'html' }, timeout: 35000 },
+    { name: 'proxy 1', build: u => 'https://cors-get-proxy.sirjosh.workers.dev/?url=' + encodeURIComponent(u), timeout: 16000, delay: 500 },
+    { name: 'proxy 2', build: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u), timeout: 16000, delay: 800 },
+    { name: 'proxy 3', build: u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u), timeout: 16000, delay: 1100 },
+    { name: 'proxy 4', build: u => 'https://corsproxy.io/?url=' + encodeURIComponent(u), timeout: 12000, delay: 1400 },
+    { name: 'proxy 6', build: u => 'https://test.cors.workers.dev/?' + u, timeout: 16000, delay: 2000 }
+  ];
+  let srcPreferredProxy = null;
+  let srcCurrentNovel = null;   /* { base, title, url, cover, links } */
+  let srcImportStop = false;
+
+  function srcProxyOrder(){
+    if(!srcPreferredProxy) return SRC_PROXIES;
+    const first = SRC_PROXIES.find(s => s.name === srcPreferredProxy);
+    return first ? [first, ...SRC_PROXIES.filter(s => s.name !== srcPreferredProxy)] : SRC_PROXIES;
+  }
+
+  function srcTryProxy(src, url, onController){
+    const ctl = new AbortController();
+    if(onController) onController(ctl);
+    const timer = setTimeout(() => ctl.abort(), src.timeout || 16000);
+    return fetch(src.build(url), { ...(src.headers ? { headers: src.headers } : {}), signal: ctl.signal })
+      .then(res => { if(!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+      .then(body => {
+        if(body.length < 2000 || !/<(html|body|div|p)[\s>]/i.test(body.slice(0, 8000))) throw new Error('unusable response');
+        if(/just a moment|cf-browser-verification|enable javascript and cookies|attention required/i.test(body.slice(0, 4000))) throw new Error('blocked by bot protection');
+        return body;
+      })
+      .catch(e => { throw new Error(src.name + ': ' + (e.name === 'AbortError' ? 'timed out' : (e.message || 'failed'))); })
+      .finally(() => clearTimeout(timer));
+  }
+
+  async function fetchSourceHtml(url, say){
+    /* Try the proxy that worked last on its own first — once one is known good
+       this makes every chapter fetch a single request instead of a race. */
+    if(srcPreferredProxy){
+      const preferred = srcProxyOrder()[0];
+      try{ return await srcTryProxy(preferred, url); }catch(_){}
+    }
+    const controllers = [];
+    let settled = false;
+    const attempt = async src => {
+      const result = await srcTryProxy(src, url, ctl => controllers.push(ctl));
+      if(!settled){
+        settled = true;
+        srcPreferredProxy = src.name;
+        controllers.forEach(c => { try{ c.abort(); }catch(_){} });
+      }
+      return result;
+    };
+    const runs = srcProxyOrder().map(src =>
+      new Promise(r => setTimeout(r, src.delay || 0))
+        .then(() => settled ? Promise.reject(new Error(src.name + ': skipped')) : attempt(src))
+    );
+    const html = await Promise.any(runs);
+    if(say) say('');
+    return html;
+  }
+
+  function srcAbsUrl(href, base){
+    if(!href) return '';
+    try{ return new URL(href, base).href; }catch(_){ return ''; }
+  }
+
+  function parseSourceSearch(html, base){
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const out = [];
+    const seen = new Set();
+    doc.querySelectorAll('a[href$=".html"][title]').forEach(a => {
+      const title = (a.getAttribute('title') || '').trim();
+      const url = srcAbsUrl(a.getAttribute('href'), base);
+      if(!title || !url || url.includes('/chapter-') || seen.has(url)) return;
+      seen.add(url);
+      /* Result rows put the cover in a sibling column — search the row. */
+      const row = a.closest('.row, li, article') || a.parentElement;
+      const img = row ? row.querySelector('img') : null;
+      const cover = img ? srcAbsUrl(img.getAttribute('src') || img.getAttribute('data-src') || '', base) : '';
+      out.push({ title, url, cover });
+    });
+    return out.slice(0, 30);
+  }
+
+  function srcChapterNum(href){
+    const m = (href || '').match(/chapter-(\d+)/);
+    return m ? +m[1] : 0;
+  }
+
+  function parseSourceNovel(html, base){
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const links = [...doc.querySelectorAll('.list-chapter a[href]')].map(a => srcAbsUrl(a.getAttribute('href'), base)).filter(Boolean);
+    /* The site lists chapters newest-first — restore reading order. */
+    links.sort((a, b) => srcChapterNum(a) - srcChapterNum(b));
+    /* The list shows 50 chapters per ?page=N — find how many pages exist. */
+    const pages = [...html.matchAll(/href="[^"]*\?page=(\d+)[^"]*"/g)].map(m => +m[1]);
+    const maxPage = pages.length ? Math.max(...pages) : 1;
+    return { links, maxPage: Math.max(1, maxPage) };
+  }
+
+  /* Fetch more ?page=N list pages until the chapter links cover the range. */
+  async function srcEnsureChapters(novel, need){
+    while(novel.links.length < need && novel.maxPage > novel.loadedPages){
+      novel.loadedPages += 1;
+      const html = await fetchSourceHtml(novel.url + '?page=' + novel.loadedPages);
+      const more = parseSourceNovel(html, novel.base).links;
+      const seen = new Set(novel.links);
+      more.forEach(u => { if(!seen.has(u)){ seen.add(u); novel.links.push(u); } });
+      novel.links.sort((a, b) => srcChapterNum(a) - srcChapterNum(b));
+    }
+  }
+
+  function srcChapterTitleFrom(doc){
+    const el = doc.querySelector('#chapter-title') || doc.querySelector('.tr-title');
+    if(el && el.textContent.trim()) return el.textContent.trim();
+    const t = doc.title || '';
+    let m = t.match(/-\s*Chapter\s+[\dIVXLCivxlc]+\s*-\s*(.+?)\s+online free/i);
+    if(m) return m[1].trim();
+    m = t.match(/Chapter\s+[\dIVXLCivxlc]+\s*[:–-]\s*(.+?)(\s+online free.*|$)/i);
+    return m ? m[1].trim() : '';
+  }
+
+  function parseSourceChapter(html){
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const node = doc.querySelector('#chapter-content') || doc.body;
+    node.querySelectorAll('script,style,ins,iframe,.chapter-nav,.adsbygoogle,[class*="ads"],[id*="ads"]').forEach(n => n.remove());
+    const paras = [...node.querySelectorAll('p')].map(p => p.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const text = paras.length ? paras.join('\n\n') : node.textContent.replace(/[ \t]+\n/g, '\n').trim();
+    return { title: srcChapterTitleFrom(doc), text };
+  }
+
+  async function openSourceNovel(source, item){
+    $("srcStatus").textContent = `Loading “${item.title}”…`;
+    try{
+      const html = await fetchSourceHtml(item.url, msg => $("srcStatus").textContent = msg);
+      const novel = parseSourceNovel(html, source.base);
+      srcCurrentNovel = { base: source.base, title: item.title, url: item.url, cover: item.cover, links: novel.links, loadedPages: 1, maxPage: novel.maxPage };
+      $("srcResults").style.display = 'none';
+      $("srcNovelPanel").hidden = false;
+      $("srcNovelTitle").textContent = item.title;
+      $("srcNovelCount").textContent = novel.links.length
+        ? (novel.maxPage > 1 ? `${novel.links.length}+ chapters available` : `${novel.links.length} chapters available`)
+        : 'No chapter list was found on the page.';
+      const coverImg = $("srcNovelCover");
+      if(item.cover){ coverImg.src = item.cover; coverImg.hidden = false; } else coverImg.hidden = true;
+      $("srcFrom").value = 1;
+      $("srcTo").value = Math.min(10, novel.links.length);
+      $("srcImportStatus").textContent = '';
+      $("srcStatus").textContent = '';
+    }catch(e){
+      $("srcStatus").textContent = 'Could not load that novel. (' + e.message + ')';
+    }
+  }
+
+  function saveImportedNovel(novel, chapters){
+    const book = addBook(novel.title, chapters);
+    srcCurrentNovel = null;
+    closeModals();
+    openBook(book.id, {resume:false});
+    toast(`Imported ${chapters.length} chapters of “${novel.title}”.`);
+  }
+
+  async function importSourceChapters(){
+    const novel = srcCurrentNovel;
+    if(!novel || !novel.links.length){ toast('Open a novel first.'); return; }
+    const from = Math.max(1, +$("srcFrom").value || 1);
+    let to = Math.max(from, +$("srcTo").value || from + 9);
+    if(to - from + 1 > 150){ toast('Import up to 150 chapters at a time.'); return; }
+    /* Fetch enough list pages to cover the requested range. */
+    try{ await srcEnsureChapters(novel, to); }catch(e){
+      if(novel.links.length < from){
+        $("srcImportStatus").textContent = 'Could not load the chapter list page. (' + e.message + ')';
+        return;
+      }
+      to = Math.min(to, novel.links.length);
+    }
+    to = Math.min(to, novel.links.length);
+    srcImportStop = false;
+    $("btnSrcStop").hidden = false;
+    $("btnSrcStop").disabled = false;
+    const token = progressShow(`Importing ${novel.title}…`, 5);
+    const chapters = [];
+    try{
+      for(let i = from; i <= to; i++){
+        if(srcImportStop) break;
+        progressSet(Math.round((i - from) / (to - from + 1) * 100), `Fetching chapter ${i} of ${to}…`);
+        $("srcImportStatus").textContent = `Importing chapter ${i} of ${to}…`;
+        const html = await fetchSourceHtml(novel.links[i - 1]);
+        const { title: chTitle, text } = parseSourceChapter(html);
+        if(text && text.length > 40) chapters.push({ title: chTitle || `Chapter ${i}`, text });
+      }
+    }catch(e){
+      progressEnd('Import failed', token);
+      $("btnSrcStop").hidden = true;
+      $("srcImportStatus").textContent = 'Import stopped: ' + e.message;
+      if(chapters.length) saveImportedNovel(novel, chapters);
+      return;
+    }
+    $("btnSrcStop").hidden = true;
+    progressEnd(chapters.length ? 'Chapters imported' : 'Import failed', token);
+    if(!chapters.length){
+      $("srcImportStatus").textContent = 'No readable chapters were found.';
+      return;
+    }
+    saveImportedNovel(novel, chapters);
+  }
+
+  $("btnSources").onclick = () => {
+    if(!$("srcSource").options.length){
+      NOVEL_SOURCES.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id; opt.textContent = s.name;
+        $("srcSource").appendChild(opt);
+      });
+    }
+    openModal("modalSources");
+  };
+  $("btnSrcSearch").onclick = async () => {
+    const source = NOVEL_SOURCES.find(s => s.id === $("srcSource").value) || NOVEL_SOURCES[0];
+    const q = $("srcQuery").value.trim();
+    if(!q){ toast('Type something to search for.'); return; }
+    $("srcStatus").textContent = `Searching ${source.name} for “${q}”…`;
+    $("srcResults").innerHTML = '';
+    $("srcResults").style.display = '';
+    $("srcNovelPanel").hidden = true;
+    try{
+      const html = await fetchSourceHtml(source.base + '/search?keyword=' + encodeURIComponent(q),
+        msg => $("srcStatus").textContent = msg);
+      const results = parseSourceSearch(html, source.base);
+      if(!results.length){
+        $("srcStatus").textContent = `No novels matched “${q}” on ${source.name}.`;
+        return;
+      }
+      $("srcStatus").textContent = `${results.length} results from ${source.name} — pick a novel.`;
+      $("srcResults").innerHTML = '';
+      results.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'src-card';
+        if(item.cover){
+          const img = document.createElement('img');
+          img.loading = 'lazy';
+          img.onerror = () => img.remove();
+          img.src = item.cover;
+          card.appendChild(img);
+        }
+        const t = document.createElement('span');
+        t.className = 't';
+        t.textContent = item.title;
+        card.appendChild(t);
+        card.onclick = () => openSourceNovel(source, item);
+        $("srcResults").appendChild(card);
+      });
+    }catch(e){
+      $("srcStatus").textContent = 'Search failed — every fetch route is busy or blocked right now. Try again in a moment. (' + e.message + ')';
+    }
+  };
+  $("srcQuery").addEventListener('keydown', e => { if(e.key === 'Enter') $("btnSrcSearch").click(); });
+  $("btnSrcBack").onclick = () => {
+    $("srcNovelPanel").hidden = true;
+    $("srcResults").style.display = '';
+  };
+  $("btnSrcImport").onclick = importSourceChapters;
+  $("btnSrcStop").onclick = () => { srcImportStop = true; $("btnSrcStop").disabled = true; };
   $("libSearch").oninput = renderLibrary;
   $("libSort").onchange = renderLibrary;
   $("libImport").onclick = () => $("fileInput").click();
