@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050505">
+<!-- Google rejects translate_tts requests that carry a foreign Referer (HTTP 404);
+     this page-level policy is what lets the Google Translate voice play. -->
+<meta name="referrer" content="no-referrer">
 <title>Ultra Pro Reader</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050505'/%3E%3Cpath d='M10 15c9-3 17-1 22 3v34c-6-4-13-6-22-4zm44 0c-9-3-17-1-22 3v34c6-4 13-6 22-4z' fill='none' stroke='%23f6c968' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M17 23h9m-9 7h9m12-7h9m-9 7h9' stroke='%233fc98e' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1917,11 +1920,12 @@ function speechUnitForOffset(units, offset){
   }
   return last;
 }
-/* Android Chrome normally sends no word-boundary events. Estimate the word
-   being spoken from elapsed time so the highlight keeps moving there too. */
+/* Android Chrome normally sends no word-boundary events, and desktop Chrome's
+   events can stall after the first few words. Estimate the word being spoken
+   from elapsed time whenever the boundary stream goes stale so the highlight
+   keeps moving there too (Google Translate audio never sends any). */
 function startHlFallback(batch, g){
   stopHlFallback();
-  if(!isMobileSpeech) return;
   if(!["word","sentence+word","paragraph+word"].includes(S.settings.highlight)) return;
   const spokenText = batch.spoken || "";
   const ws = wordSpans(spokenText);
@@ -1930,7 +1934,7 @@ function startHlFallback(batch, g){
   /* Estimate 15% slower than the calibrated speed so the highlight trails the
      voice slightly instead of running ahead of it on mobile. */
   const perChar = ((speechMsPerCharBase > 20 ? speechMsPerCharBase : 62) / rate) * 1.15;
-  const t0 = performance.now();
+  let t0 = performance.now(), pauseAnchor = 0;
   let acc = 0;
   const starts = ws.map(w => {
     const s = acc;
@@ -1946,7 +1950,9 @@ function startHlFallback(batch, g){
   });
   let lastIdx = -1;
   const tick = () => {
-    if(g !== gen || !S.playing || S.paused) return;
+    if(g !== gen || !S.playing) return;
+    if(S.paused){ pauseAnchor = performance.now(); hlFallbackTimer = setTimeout(tick, 120); return; }
+    if(pauseAnchor){ t0 += performance.now() - pauseAnchor; pauseAnchor = 0; }
     if(performance.now() - lastBoundaryAt > 900){
       const elapsed = performance.now() - t0;
       let i = 0;
@@ -1965,6 +1971,7 @@ function restartSpeech(){
   gen++; const g = gen;
   stopHlFallback();
   clearInterval(keepAliveTimer); keepAliveTimer = null;
+  googleStop();
   clearTimeout(boundaryTimer);
   const active = speechSynthesis.speaking || speechSynthesis.pending;
   try{ if(active) speechSynthesis.cancel(); }catch(e){}
@@ -1973,10 +1980,113 @@ function restartSpeech(){
   if(active) setTimeout(start, isMobileSpeech ? 260 : 60);
   else start();
 }
+/* ---------- Google Translate English: real Google network TTS ---------- */
+function isGoogleTranslateVoice(){ return S.settings.voiceURI === "google-translate-en"; }
+let googleAudio = null, googleQueue = [];
+function googleStop(){
+  if(googleAudio){ const a = googleAudio; googleAudio = null; try{ a.pause(); }catch(e){} try{ a.removeAttribute("src"); }catch(e){} }
+  googleQueue = [];
+}
+/* translate_tts accepts at most 200 characters per request, so long batches
+   are split at word boundaries and the pieces play back to back. */
+function googleSplitPieces(text, limit = 200){
+  const pieces = [];
+  let rest = String(text || "");
+  while(rest.length > limit){
+    let cut = rest.lastIndexOf(" ", limit);
+    if(cut < Math.floor(limit * 0.6)) cut = limit;
+    pieces.push(rest.slice(0, cut));
+    rest = rest.slice(cut).replace(/^\s+/, "");
+  }
+  if(rest) pieces.push(rest);
+  return pieces;
+}
+/* The same Google Translate voice the Read Aloud extension uses, fetched via
+   the public translate_tts endpoint. The page's no-referrer policy is what
+   makes Google accept it (a foreign Referer gets HTTP 404). */
+function googleTtsUrl(text){
+  return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=" + encodeURIComponent(text) + "&tl=en";
+}
+/* Buffer the next batch's first piece while the current one plays so a slow
+   response never leaves a silent gap between sentences. */
+function googlePrefetch(batch){
+  try{
+    if(!isGoogleTranslateVoice() || googleQueue.length >= 2) return;
+    const page = S.pages[S.pageIdx];
+    if(!page) return;
+    let idx = batch ? batch.endIndex + 1 : pos.u;
+    while(idx < page.units.length){
+      const nb = buildSpeechBatch(idx);
+      if(!nb || !nb.spoken || !nb.spoken.trim()) return;
+      if(googleQueue.some(q => q.text === nb.spoken)){ idx = nb.endIndex + 1; continue; }
+      const au = new Audio(googleTtsUrl(googleSplitPieces(nb.spoken)[0]));
+      au.preload = "auto";
+      googleQueue.push({text: nb.spoken, au});
+      return;
+    }
+  }catch(e){}
+}
+function googleSpeak(batch, g){
+  const u = batch.units && batch.units[0];
+  updateStats();
+  const pieces = googleSplitPieces(batch.spoken);
+  let firstAu = null;
+  const qi = googleQueue.findIndex(q => q.text === batch.spoken);
+  if(qi >= 0){ const q = googleQueue[qi]; googleQueue.splice(qi, 1); if(!q.au.error) firstAu = q.au; }
+  if(u) highlightUnit(u, u.start || 0);
+  utStart = performance.now(); lastBoundaryAt = performance.now();
+  if(u) highlightUnit(u, u.start || 0);
+  startHlFallback(batch, g);
+  let idx = 0;
+  const finish = () => {
+    stopHlFallback();
+    if(batch.spoken.length > 40){
+      const ms = (performance.now() - utStart) / batch.spoken.length * Math.max(0.5, S.settings.rate);
+      if(Number.isFinite(ms) && ms > 5 && ms < 400){
+        speechMsPerCharBase = speechMsPerCharBase ? speechMsPerCharBase * 0.75 + ms * 0.25 : ms;
+      }
+    }
+    if(g !== gen) return;
+    stallRetries = 0;
+    pos.u = batch.endIndex; nextUnit();
+  };
+  const playAu = au => {
+    googleAudio = au;
+    au.onended = () => { if(googleAudio !== au) return; googleAudio = null; playPiece(); };
+    au.onerror = () => {
+      if(googleAudio !== au) return;
+      googleAudio = null;
+      if(g !== gen) return;
+      toast("Google Translate voice failed — using the system voice.");
+      S.settings.voiceURI = "auto"; saveSettings(); loadVoices();
+      restartSpeech();
+    };
+    if(g === gen && S.playing && !S.paused){
+      au.play().catch(() => { if(googleAudio !== au) return; googleAudio = null; playPiece(); });
+    } else setStatus("Paused");
+  };
+  const playPiece = () => {
+    if(g !== gen) return;
+    if(idx >= pieces.length){ finish(); return; }
+    const au = (idx === 0 && firstAu) ? firstAu : new Audio(googleTtsUrl(pieces[idx]));
+    idx++;
+    /* Read Aloud's Google engine plays at rate × rateAdjust(1.1) — Google's
+       default pace sits ~10% slow, so the setting matches the other voices. */
+    au.playbackRate = clamp(S.settings.rate, 0.5, 4) * 1.1;
+    try{ au.preservesPitch = true; }catch(e){}
+    playAu(au);
+  };
+  setStatus("Reading");
+  playPiece();
+  googlePrefetch(batch);
+}
 function buildSpeechBatch(startIndex){
   const page = S.pages[S.pageIdx], first = page && page.units[startIndex];
   if(!first) return null;
   const units = [], map = [];
+  /* The Google Translate endpoint returns no audio above 200 characters, so
+     that voice gets a tighter cap than the Web Speech path. */
+  const cap = isGoogleTranslateVoice() ? 200 : 240;
   let spoken = "", endIndex = startIndex - 1;
   for(let i = startIndex; i < page.units.length; i++){
     const unit = page.units[i];
@@ -1986,7 +2096,7 @@ function buildSpeechBatch(startIndex){
     const transformed = speechTransform(unit.text, unit.start || 0);
     const part = transformed.spoken;
     const separator = spoken && part && !/\s$/.test(spoken) && !/^\s/.test(part) ? " " : "";
-    if(units.length && spoken.length + separator.length + part.length > 240) break;
+    if(units.length && spoken.length + separator.length + part.length > cap) break;
     units.push(unit); endIndex = i;
     if(separator){ spoken += separator; map.push(unit.start || 0); }
     spoken += part; map.push(...transformed.map);
@@ -2005,6 +2115,7 @@ function speakUnit(retryAttempt){
   highlightUnit(u, fw ? fw.s : u.start);
   updateStats();
   if(!spoken.trim()){ pos.u = batch.endIndex; setTimeout(() => { if(g === gen) nextUnit(); }, 0); return; }
+  if(isGoogleTranslateVoice()){ googleSpeak(batch, g); return; }
   const ut = new SpeechSynthesisUtterance(spoken);
   applyVoice(ut);
   ut.rate = S.settings.rate;
@@ -2152,6 +2263,7 @@ function togglePlay(){
 }
 function pausePlayback(){
   S.paused = true; clearTimeout(wdTimer);
+  if(googleAudio){ try{ googleAudio.pause(); }catch(e){} updateTransport(); setStatus("Paused"); return; }
   try{ speechSynthesis.pause(); }catch(e){}
   if(!speechSynthesis.paused){ gen++; try{ speechSynthesis.cancel(); }catch(e){} S.needRespeak = true; }
   updateTransport(); setStatus("Paused");
@@ -2159,6 +2271,7 @@ function pausePlayback(){
 function resumePlayback(){
   S.paused = false;
   if(cinemaAuto && !document.body.classList.contains("cinema")) cinemaOn();
+  if(googleAudio){ try{ googleAudio.play(); }catch(e){} updateTransport(); setStatus("Reading"); return; }
   if(S.needRespeak){ S.needRespeak = false; restartSpeech(); }
   else {
     try{ speechSynthesis.resume(); }catch(e){}
@@ -2173,6 +2286,7 @@ function stopPlayback(opts){
   gen++; clearTimeout(wdTimer);
   stopHlFallback();
   clearInterval(keepAliveTimer); keepAliveTimer = null;
+  googleStop();
   activeUtterance = null;
   try{ speechSynthesis.cancel(); }catch(e){}
   S.playing = false; S.paused = false; S.needRespeak = false;
@@ -4538,12 +4652,13 @@ function switchPane(which){
 function loadVoices(){
   if(!ttsOK) return;
   voices = speechSynthesis.getVoices();
-  if(!voices.length) return;
   const sel = $("voiceSelect");
+  /* Render even before the system voice list arrives: the Google Translate
+     voice is a network voice and needs no local voices to work. */
   sel.innerHTML = '<option value="auto">Auto — match language</option>' +
     '<option value="google-translate-en">🌟 Google Translate English (continuous)</option>' +
-    voices.slice().sort((a,b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name))
-      .map(v => `<option value="${esc(v.voiceURI)}">${esc(v.name)} — ${esc(v.lang)}${v.default ? " • default" : ""}</option>`).join("");
+    (voices.length ? voices.slice().sort((a,b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name))
+      .map(v => `<option value="${esc(v.voiceURI)}">${esc(v.name)} — ${esc(v.lang)}${v.default ? " • default" : ""}</option>`).join("") : "");
   sel.value = S.settings.voiceURI;
   if(sel.value !== S.settings.voiceURI){ sel.value = "auto"; }
 }
