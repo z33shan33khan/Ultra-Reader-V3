@@ -1930,11 +1930,16 @@ function startHlFallback(batch, g){
   const spokenText = batch.spoken || "";
   const ws = wordSpans(spokenText);
   if(ws.length < 2) return;
-  const rate = Math.max(0.5, S.settings.rate) || 1;
+  /* Google's engine plays at rate × 1.1, so its content clock advances by that
+     extra factor as well. */
+  const rateAdjust = isGoogleTranslateVoice() ? 1.1 : 1;
   /* Estimate 15% slower than the calibrated speed so the highlight trails the
      voice slightly instead of running ahead of it on mobile. */
-  const perChar = ((speechMsPerCharBase > 20 ? speechMsPerCharBase : 62) / rate) * 1.15;
-  let t0 = performance.now(), pauseAnchor = 0;
+  const perChar = (speechMsPerCharBase > 20 ? speechMsPerCharBase : 62) * 1.15;
+  /* Word boundaries live in CONTENT milliseconds (time at 1× speed) and the
+     clock is advanced by the CURRENT rate on every tick — so raising or
+     lowering the speed takes effect on the very next tick, the position is
+     preserved, and the highlight never jumps back to the start. */
   let acc = 0;
   const starts = ws.map(w => {
     const s = acc;
@@ -1945,24 +1950,27 @@ function startHlFallback(batch, g){
     let pause = 0;
     if(ch == null || ".!?。！？…".includes(ch)) pause = 420;
     else if(",;:、，；：".includes(ch)) pause = 170;
-    acc += Math.max(130, (w.e - w.s) * perChar) + pause / rate;
+    acc += Math.max(130, (w.e - w.s) * perChar) + pause;
     return s;
   });
-  let lastIdx = -1;
+  let lastIdx = -1, contentMs = 0, lastTick = performance.now();
   const tick = () => {
     if(g !== gen || !S.playing) return;
-    if(S.paused){ pauseAnchor = performance.now(); hlFallbackTimer = setTimeout(tick, 120); return; }
-    if(pauseAnchor){ t0 += performance.now() - pauseAnchor; pauseAnchor = 0; }
-    if(performance.now() - lastBoundaryAt > 900){
-      const elapsed = performance.now() - t0;
+    const now = performance.now();
+    /* Paused: freeze the clock so resume picks up exactly where it left off. */
+    if(S.paused){ lastTick = now; hlFallbackTimer = setTimeout(tick, 120); return; }
+    const rate = Math.max(0.5, S.settings.rate) || 1;
+    if(now - lastBoundaryAt > 900){
+      contentMs += (now - lastTick) * rate * rateAdjust;
       let i = 0;
-      while(i + 1 < ws.length && starts[i + 1] <= elapsed) i++;
+      while(i + 1 < ws.length && starts[i + 1] <= contentMs) i++;
       if(i !== lastIdx){
         lastIdx = i;
         const orig = batch.map[ws[i].s];
         highlightUnit(speechUnitForOffset(batch.units, orig), orig, false);
       }
     }
+    lastTick = now;
     hlFallbackTimer = setTimeout(tick, 120);
   };
   hlFallbackTimer = setTimeout(tick, 250);
@@ -2041,7 +2049,9 @@ function googleSpeak(batch, g){
   const finish = () => {
     stopHlFallback();
     if(batch.spoken.length > 40){
-      const ms = (performance.now() - utStart) / batch.spoken.length * Math.max(0.5, S.settings.rate);
+      /* The batch played at rate × 1.1, so normalise the measured speed by
+         that factor too or every later estimate would run 10% fast. */
+      const ms = (performance.now() - utStart) / batch.spoken.length * Math.max(0.5, S.settings.rate) * 1.1;
       if(Number.isFinite(ms) && ms > 5 && ms < 400){
         speechMsPerCharBase = speechMsPerCharBase ? speechMsPerCharBase * 0.75 + ms * 0.25 : ms;
       }
@@ -5055,11 +5065,20 @@ function init(){
   /* Voice & appearance */
   $("voiceSelect").onchange = e => { voiceFallbackURI = ""; lockedVoiceURI = ""; S.settings.voiceURI = e.target.value; saveSettings(); if(S.playing && !S.paused) restartSpeech(); };
   $("speechLang").onchange = e => { voiceFallbackURI = ""; S.settings.speechLang = e.target.value; saveSettings(); if(S.playing && !S.paused) restartSpeech(); };
+  /* Google's engine is one streaming audio element: push a speed change to it
+     straight away so the voice and the highlight following its clock change
+     together instead of at the next restart. Returns false when the current
+     voice needs the usual restart. */
+  function pushLiveGoogleRate(){
+    if(!googleAudio) return false;
+    try{ googleAudio.playbackRate = clamp(S.settings.rate, 0.5, 4) * 1.1; }catch(e){}
+    return true;
+  }
   $("rateRange").oninput = e => { S.settings.rate = +e.target.value; saveSettings(); applyAppearance(); updateStats(); };
-  $("rateRange").onchange = () => { if(S.playing && !S.paused) restartSpeech(); };
+  $("rateRange").onchange = () => { if(S.playing && !S.paused && !pushLiveGoogleRate()) restartSpeech(); };
   $("ratePresets").addEventListener("click", e => {
     const b = e.target.closest("[data-r]");
-    if(b){ S.settings.rate = +b.dataset.r; saveSettings(); applyAppearance(); updateStats(); if(S.playing && !S.paused) restartSpeech(); }
+    if(b){ S.settings.rate = +b.dataset.r; saveSettings(); applyAppearance(); updateStats(); if(S.playing && !S.paused && !pushLiveGoogleRate()) restartSpeech(); }
   });
   $("fontInput").onchange = e => { S.settings.font = e.target.value.trim() || "Literata"; saveSettings(); applyAppearance(); };
   $("sizeRange").oninput = e => { S.settings.size = +e.target.value; saveSettings(); applyAppearance(); };
