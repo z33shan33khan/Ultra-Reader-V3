@@ -876,6 +876,12 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
 
       <div><label class="lbl" for="hlTextColor">Highlight text color</label>
         <span style="display:flex;gap:8px;align-items:center"><input type="color" id="hlTextColor" value="#ffffff"><button type="button" class="btn small" id="hlTextColorReset" title="Go back to the normal text color">Default</button></span></div>
+      <div><label class="lbl" for="hlWordColor">Word highlight color</label>
+        <span style="display:flex;gap:8px;align-items:center"><input type="color" id="hlWordColor"><button type="button" class="btn small" id="hlWordColorReset" title="Back to the theme's default tint">Default</button></span></div>
+      <div><label class="lbl" for="hlSentColor">Sentence / line highlight color</label>
+        <span style="display:flex;gap:8px;align-items:center"><input type="color" id="hlSentColor"><button type="button" class="btn small" id="hlSentColorReset" title="Back to the theme's default tint">Default</button></span></div>
+      <div><label class="lbl" for="hlParaColor">Paragraph highlight color</label>
+        <span style="display:flex;gap:8px;align-items:center"><input type="color" id="hlParaColor"><button type="button" class="btn small" id="hlParaColorReset" title="Back to the theme's default tint">Default</button></span></div>
 
       <label class="check-row"><input type="checkbox" id="autoScroll" checked> Auto-scroll to follow the reading</label>
 
@@ -1388,7 +1394,7 @@ function populateAmbientMusicOptions(){
 }
 const DEFAULTS = {
   voiceURI:"auto", speechLang:"auto", rate:1, font:"Literata", size:19,
-  highlight:"sentence+word", hlTextColor:"", autoScroll:true, autoTranslate:"off",
+  highlight:"sentence+word", hlTextColor:"", hlWordColor:"", hlSentColor:"", hlParaColor:"", autoScroll:true, autoTranslate:"off",
   translateStyle:"simple", translateEngine:"google", genderOn:true, genderFix:{},
   autoContinue:true, webAutoContinue:true, theme:"dark",
   readerTheme:"dark", readerBg:"#050505", readerText:"#ffffff",
@@ -4700,7 +4706,7 @@ function applyAppearance(){
   $("rateVal").textContent = S.settings.rate.toFixed(2) + "×";
   document.querySelectorAll("#ratePresets button").forEach(b => b.classList.toggle("active", +b.dataset.r === S.settings.rate));
   $("highlightSelect").value = S.settings.highlight;
-  applyHlTextColor();
+  applyHlColors();
   $("autoScroll").checked = S.settings.autoScroll;
   $("autoContinue").checked = S.settings.autoContinue;
   document.body.dataset.theme = S.settings.theme;
@@ -4728,16 +4734,44 @@ function applyReaderColors(){
   $("readerTextColor").value = validColor(S.settings.readerText) ? S.settings.readerText : "#ffffff";
   syncPip();
 }
-/* Optional custom tint for the highlighted text itself; empty means the
-   normal reading color. */
-function applyHlTextColor(){
-  const v = S.settings.hlTextColor;
-  const ok = /^#[0-9a-f]{6}$/i.test(v || "");
-  const root = document.documentElement;
-  if(ok) root.style.setProperty("--hl-text", v);
-  else root.style.removeProperty("--hl-text");
-  const input = $("hlTextColor");
-  if(input) input.value = ok ? v : "#ffffff";
+/* Highlight colors: --hl-text tints the highlighted TEXT itself (empty =
+   normal reading color); --hl-word / --hl-sent / --hl-para replace the
+   theme's background tint for the word, sentence/line and paragraph
+   highlights (empty = the theme's own tint). A picked hex is applied with
+   the same transparency the themes use, so the text stays readable on top. */
+function colorToHex(v){
+  v = String(v || "").trim();
+  let m = /^#([0-9a-f]{6})$/i.exec(v);
+  if(m) return "#" + m[1].toLowerCase();
+  m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(v);
+  if(m) return "#" + m.slice(1, 4).map(x => (+x).toString(16).padStart(2, "0")).join("");
+  return null;
+}
+function hexToRgba(hex, a){
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || "");
+  if(!m) return null;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+function applyHlColors(){
+  const root = document.documentElement, body = document.body;
+  const apply = (prop, val, id, alpha) => {
+    const ok = /^#[0-9a-f]{6}$/i.test(val || "");
+    const css = ok ? (alpha == null ? val : hexToRgba(val, alpha)) : null;
+    /* Set on BOTH elements: the theme declares these vars on
+       body[data-theme], which would shadow an html-only value for every
+       element inside the body. */
+    if(css){ root.style.setProperty(prop, css); if(body) body.style.setProperty(prop, css); }
+    else { root.style.removeProperty(prop); if(body) body.style.removeProperty(prop); }
+    /* Swatch shows the effective color: the override, or the theme tint. */
+    const input = $(id);
+    const hex = colorToHex(css || getComputedStyle(root).getPropertyValue(prop));
+    if(hex && input && document.activeElement !== input) input.value = hex;
+  };
+  apply("--hl-text", S.settings.hlTextColor, "hlTextColor", null);
+  apply("--hl-word", S.settings.hlWordColor, "hlWordColor", .45);
+  apply("--hl-sent", S.settings.hlSentColor, "hlSentColor", .18);
+  apply("--hl-para", S.settings.hlParaColor, "hlParaColor", .08);
 }
 
 /* ---------- Speech-fixes UI ---------- */
@@ -5232,6 +5266,7 @@ function init(){
   $("sizeRange").oninput = e => { S.settings.size = +e.target.value; saveSettings(); applyAppearance(); };
   $("btnResetAppearance").onclick = () => {
     Object.assign(S.settings, {font:"Literata", size:19, highlight:"sentence+word", autoScroll:true,
+      hlTextColor:"", hlWordColor:"", hlSentColor:"", hlParaColor:"",
       readerTheme:"dark", readerBg:"#050505", readerText:"#ffffff"});
     saveSettings(); applyAppearance(); toast("Appearance reset.");
   };
@@ -5259,8 +5294,12 @@ function init(){
        keeps following a voice that sends no boundary events. */
     if(S.playing && !S.paused && hlLastBatch && !hlFallbackTimer) startHlFallback(hlLastBatch, gen, u && u.start);
   };
-  $("hlTextColor").oninput = e => { S.settings.hlTextColor = e.target.value; saveSettings(); applyHlTextColor(); };
-  $("hlTextColorReset").onclick = () => { S.settings.hlTextColor = ""; saveSettings(); applyHlTextColor(); };
+  $("hlTextColor").oninput = e => { S.settings.hlTextColor = e.target.value; saveSettings(); applyHlColors(); };
+  $("hlTextColorReset").onclick = () => { S.settings.hlTextColor = ""; saveSettings(); applyHlColors(); };
+  [["hlWordColor","hlWordColor"],["hlSentColor","hlSentColor"],["hlParaColor","hlParaColor"]].forEach(([id, key]) => {
+    $(id).oninput = e => { S.settings[key] = e.target.value; saveSettings(); applyHlColors(); };
+    $(id + "Reset").onclick = () => { S.settings[key] = ""; saveSettings(); applyHlColors(); };
+  });
   $("autoScroll").onchange = e => { S.settings.autoScroll = e.target.checked; saveSettings(); };
   $("translateSelect").onchange = e => {
     S.settings.autoTranslate = e.target.value; saveSettings(); syncTranslateOptions();
