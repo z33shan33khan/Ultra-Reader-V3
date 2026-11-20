@@ -926,7 +926,7 @@ body.pip-window .reader-card{margin:54px auto 96px;max-width:900px;width:calc(10
         <span class="badge new">NEW</span>
         <label class="switch"><input type="checkbox" id="pronToggle" checked><span></span></label>
       </div>
-      <p class="hint">Say words the way they sound in Chinese — <b>Xin → Shin</b>, <b>Xiao → Shiao</b>, <b>Qi → Chi</b>, <b>Zhang → Jang</b>, <b>Cai → Tsai</b>… Whole words, any capitalization. Combined names like <b>Qingcheng</b> are split into syllables automatically. Only the spoken audio changes.</p>
+      <p class="hint">Say words the way they sound in Chinese — <b>Xin → Shin</b>, <b>Xiao → Shiao</b>, <b>Qi → Chi</b>, <b>Zhang → Jang</b>, <b>Cai → Tsai</b>… Words <b>or phrases</b> — spaces, commas and punctuation are fine too, e.g. <b>100,000 → Hundred Thousand</b> or <b>Qingcheng Mountain → …</b>, any capitalization. Combined names like <b>Qingcheng</b> are split into syllables automatically. Only the spoken audio changes.</p>
       <div class="rules-list" id="rulesList"></div>
       <div class="rule-count" id="ruleCount"></div>
       <div class="rule-add">
@@ -1162,6 +1162,61 @@ function normalizeCaps(text){
     (/[AEIOUY]/.test(w) && !/^[IVXLCDM]+$/.test(w)) ? w.toLowerCase() : w);
 }
 
+/* ---------- Number & year reading (always on) ----------
+   Figures are spoken the way people say them: 1999 → "nineteen ninety-nine",
+   100,000 → "one hundred thousand", 12,345.67 → "twelve thousand three
+   hundred forty-five point six seven". An explicit pronunciation rule for the
+   exact figure always wins over this automatic reading. */
+const NUM_ONES = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+const NUM_TENS = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+function numTwo(n){ // 0-99
+  return n < 20 ? NUM_ONES[n] : (NUM_TENS[Math.floor(n / 10)] + (n % 10 ? "-" + NUM_ONES[n % 10] : ""));
+}
+function numThree(n){ // 0-999
+  const h = Math.floor(n / 100), r = n % 100;
+  return (h ? NUM_ONES[h] + " hundred" + (r ? " " : "") : "") + (r ? numTwo(r) : (h ? "" : "zero"));
+}
+function intToWords(digits){ // digit string → words, grouped by thousands
+  let s = String(digits).replace(/[^\d]/g, "").replace(/^0+(?=\d)/, "");
+  if(!s) return null;
+  if(s === "0") return "zero";
+  if(s.length > 15) return null; // beyond quadrillions: let the TTS engine try
+  const groups = [];
+  for(let i = s.length; i > 0; i -= 3) groups.push(Number(s.slice(Math.max(0, i - 3), i)));
+  const SCALE = ["", " thousand", " million", " billion", " trillion"];
+  const parts = [];
+  for(let i = groups.length - 1; i >= 0; i--){
+    if(!groups[i]) continue;
+    parts.push(numThree(groups[i]) + SCALE[i]);
+  }
+  return parts.join(" ");
+}
+function yearToWords(s){ // "1999" → "nineteen ninety-nine"; null = read as a plain number
+  if(!/^\d{4}$/.test(s)) return null;
+  const y = Number(s);
+  if(y < 1100) return null; // 1099 and below are said as ordinary numbers
+  if(y >= 2000 && y <= 2009) return "two thousand" + (y > 2000 ? " " + NUM_ONES[y - 2000] : "");
+  const h = Math.floor(y / 100), rem = y % 100;
+  const head = intToWords(String(h));
+  if(rem === 0) return head + " hundred";       // 1900 → nineteen hundred
+  if(rem < 10) return head + " oh " + NUM_ONES[rem]; // 1905 → nineteen oh five
+  return head + " " + numTwo(rem);              // 1999 → nineteen ninety-nine
+}
+function figureToWords(raw){ // "100,000" / "12,345.67" / "1999" → words; null = leave alone
+  const cleaned = raw.replace(/,/g, "");
+  const dot = cleaned.indexOf(".");
+  const whole = dot < 0 ? cleaned : cleaned.slice(0, dot);
+  const frac = dot < 0 ? "" : cleaned.slice(dot + 1);
+  if(!/^\d+$/.test(whole)) return null;
+  if(!frac){
+    const y = yearToWords(raw);
+    if(y) return y;
+  }
+  const head = intToWords(whole);
+  if(!head) return null;
+  if(!frac) return head;
+  return head + " point " + frac.split("").map(d => NUM_ONES[+d]).join(" ");
+}
 /* speechTransform: skip words/symbols + apply pronunciation rules.
    Returns spoken string + char map back to original offsets. */
 function speechTransform(text, baseOffset = 0){
@@ -1187,30 +1242,93 @@ function speechTransform(text, baseOffset = 0){
     }
   };
   const wordRe = /[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
-  let last = 0, m;
-  while((m = wordRe.exec(text))){
-    pushGap(text.slice(last, m.index), last);
-    const tok = m[0], low = tok.toLowerCase();
-    if(sk.words.has(low)){ last = wordRe.lastIndex; continue; }
-    let res;
-    if(ruleMap.has(low)){
-      res = matchCase(tok, ruleMap.get(low));
-    } else {
-      res = "";
-      for(const part of tok.split(/(['’\-])/)){
-        if(part === "'" || part === "’" || part === "-"){ res += part; continue; }
-        const pl = part.toLowerCase();
-        if(ruleMap.has(pl)) res += matchCase(part, ruleMap.get(pl));
-        else {
-          const syl = decomposePinyin(pl, ruleMap);
-          res += syl ? matchCase(part, syl) : part;
+  const emitWords = (str, base) => {
+    let last = 0, m;
+    wordRe.lastIndex = 0;
+    while((m = wordRe.exec(str))){
+      pushGap(str.slice(last, m.index), base + last);
+      const tok = m[0], low = tok.toLowerCase();
+      if(sk.words.has(low)){ last = wordRe.lastIndex; continue; }
+      let res;
+      if(ruleMap.has(low)){
+        res = matchCase(tok, ruleMap.get(low));
+      } else {
+        res = "";
+        for(const part of tok.split(/(['’\-])/)){
+          if(part === "'" || part === "’" || part === "-"){ res += part; continue; }
+          const pl = part.toLowerCase();
+          if(ruleMap.has(pl)) res += matchCase(part, ruleMap.get(pl));
+          else {
+            const syl = decomposePinyin(pl, ruleMap);
+            res += syl ? matchCase(part, syl) : part;
+          }
         }
       }
+      push(res, base + m.index, tok.length);
+      last = wordRe.lastIndex;
     }
-    push(res, m.index, tok.length);
-    last = wordRe.lastIndex;
+    pushGap(str.slice(last), base + last);
+  };
+
+  /* Rules whose phrase contains spaces or punctuation (100,000 → Hundred
+     Thousand, Qingcheng Mountain → …) cannot match token by token, so they
+     are found in the raw text first and their spans are spoken through the
+     rule. Simple single-word rules keep flowing through the loop below. */
+  const phraseRules = S.settings.pronEnabled
+    ? S.settings.pronRules.filter(r => r.on && !/^[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*$/u.test(r.from))
+    : [];
+  const phraseHits = [];
+  if(phraseRules.length){
+    const lowText = text.toLowerCase();
+    const wordCh = c => !!c && /[\p{L}\p{N}]/u.test(c);
+    for(const r of phraseRules){
+      const nl = r.from.toLowerCase();
+      if(!nl) continue;
+      let from = 0;
+      for(;;){
+        const i = lowText.indexOf(nl, from);
+        if(i < 0) break;
+        const end = i + nl.length;
+        const startsWord = /[\p{L}\p{N}]/u.test(nl[0]);
+        const endsWord = /[\p{L}\p{N}]/u.test(nl[nl.length - 1]);
+        /* Word edges only count when the rule itself touches a word edge, so
+           ",100," can still match next to letters. */
+        if((!startsWord || !wordCh(text[i - 1])) && (!endsWord || !wordCh(text[end])))
+          phraseHits.push({start: i, end, to: r.to});
+        from = i + Math.max(1, nl.length);
+      }
+    }
+    phraseHits.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
   }
-  pushGap(text.slice(last), last);
+
+  /* Plain regions: figures are read the way people say them — years as years,
+     amounts as values — then ordinary word tokens run through as before. */
+  const figureRe = /(?<![\p{L}\p{N}])\d(?:[\d,]*\d)?(?:\.\d+)?(?![\p{L}\p{N}])/gu;
+  const emitPlain = (str, base) => {
+    let last = 0, m;
+    figureRe.lastIndex = 0;
+    while((m = figureRe.exec(str))){
+      const raw = m[0];
+      /* An explicit rule for this exact figure wins over the automatic
+         reading; single-word rules are applied by the word loop below. */
+      if(ruleMap.has(raw.toLowerCase())) continue;
+      const words = figureToWords(raw);
+      if(!words) continue;
+      emitWords(str.slice(last, m.index), base + last);
+      push(words, base + m.index, raw.length);
+      last = m.index + raw.length;
+    }
+    emitWords(str.slice(last), base + last);
+  };
+
+  let pos = 0;
+  for(const hit of phraseHits){
+    if(hit.start < pos) continue; // overlaps an earlier, longer hit
+    emitPlain(text.slice(pos, hit.start), pos);
+    push(matchCase(text.slice(hit.start, hit.end), hit.to), hit.start, hit.end - hit.start);
+    pos = hit.end;
+  }
+  emitPlain(text.slice(pos), pos);
   return {spoken: out.join(""), map};
 }
 
@@ -5196,7 +5314,7 @@ function init(){
   $("btnAddRule").onclick = () => {
     const from = $("ruleFrom").value.trim(), to = $("ruleTo").value.trim();
     if(!from || !to){ toast("Enter both a word and how to say it."); return; }
-    if(!/^[\p{L}\p{N}][\p{L}\p{N}'’\-]*$/u.test(from)){ toast("The word can only contain letters, numbers, apostrophes or hyphens."); return; }
+    if(!/^[\p{L}\p{N}][\p{L}\p{N}'’\-.,:;()\s]*$/u.test(from)){ toast("The word or phrase can only contain letters, numbers, apostrophes, hyphens, spaces or basic punctuation (.,:;())."); return; }
     const idx = editingRule != null ? editingRule : S.settings.pronRules.findIndex(r => r.from.toLowerCase() === from.toLowerCase());
     if(idx >= 0) S.settings.pronRules[idx] = {...S.settings.pronRules[idx], from, to};
     else S.settings.pronRules.unshift({from, to, on:true});
