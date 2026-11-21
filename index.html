@@ -1437,7 +1437,8 @@ let gen = 0, renderGen = 0, voices = [], utStart = 0, boundaryTimer = null, edit
 /* Voice locked for the current run (Google Translate English never switches)
    and the Chrome ~15s keep-alive ping timer. */
 let lockedVoiceURI = "", keepAliveTimer = null;
-let hlFallbackTimer = null, lastBoundaryAt = 0, activeUtterance = null, hlLastBatch = null;
+let hlFallbackTimer = null, lastBoundaryAt = 0, activeUtterance = null, hlLastBatch = null,
+    hlAnchor = null;
 let wdTimer = null, stallRetries = 0, wakeLock = null;
 let library = [], bookmarks = [];
 try{ library = JSON.parse(localStorage.getItem("upr.library") || "[]"); }catch(e){}
@@ -2054,9 +2055,30 @@ function speechUnitForOffset(units, offset){
    events can stall after the first few words. Estimate the word being spoken
    from elapsed time whenever the boundary stream goes stale so the highlight
    keeps moving there too (Google Translate audio never sends any). */
+/* Estimated content duration of a text span using the exact word+pause formula
+   the fallback uses — the Google piece ranges are built from this so anchored
+   positions land on the same scale as `starts`. */
+function estSpanMs(text){
+  const s = String(text || "");
+  const perChar = (speechMsPerCharBase > 20 ? speechMsPerCharBase : 62) * 1.15;
+  let acc = 0;
+  for(const w of wordSpans(s)){
+    let j = w.e;
+    while(j < s.length && /\s/.test(s[j])) j++;
+    const ch = s[j];
+    let pause = 0;
+    if(ch == null || ".!?。！？…".includes(ch)) pause = 420;
+    else if(",;:、，；：".includes(ch)) pause = 170;
+    acc += Math.max(130, (w.e - w.s) * perChar) + pause;
+  }
+  return acc;
+}
 function startHlFallback(batch, g, fromOffset){
   stopHlFallback();
   hlLastBatch = batch;
+  /* An audio anchor is only valid for the batch that created it — a stale one
+     from a previous batch must never drive the position. */
+  if(!hlAnchor || hlAnchor.batch !== batch) hlAnchor = null;
   /* Every highlighting mode needs this estimator when the engine sends no
      boundary events (Google Translate audio never sends any) — without it the
      sentence/paragraph-only modes would sit on the first one forever. */
@@ -2102,15 +2124,32 @@ function startHlFallback(batch, g, fromOffset){
     /* Paused: freeze the clock so resume picks up exactly where it left off. */
     if(S.paused){ lastTick = now; hlFallbackTimer = setTimeout(tick, 120); return; }
     const rate = Math.max(0.5, S.settings.rate) || 1;
-    if(now - lastBoundaryAt > 900){
-      contentMs += (now - lastTick) * rate * rateAdjust;
-      let i = 0;
-      while(i + 1 < ws.length && starts[i + 1] <= contentMs) i++;
-      if(i !== lastIdx){
-        lastIdx = i;
-        const orig = batch.map[ws[i].s];
-        highlightUnit(speechUnitForOffset(batch.units, orig), orig, false);
+    if(hlAnchor){
+      /* Audio-anchored (Google pieces): read the position straight off the
+         playing element — synthesis time, piece loads, playbackRate and
+         estimator error can no longer drift the highlight from the voice.
+         While a piece is loading (or between pieces) hold the position
+         instead of running the clock: the audio isn't moving either. */
+      const au = hlAnchor.au;
+      const dur = au && isFinite(au.duration) && au.duration > 0 ? au.duration : 0;
+      if(dur){
+        const r = hlAnchor.ranges[clamp(hlAnchor.piece | 0, 0, hlAnchor.ranges.length - 1)] || {start: 0, end: 0};
+        contentMs = r.start + clamp(au.currentTime, 0, dur) / dur * (r.end - r.start);
+      } else if(au && !au.paused && au.currentTime > 0){
+        /* No duration yet (streamed MP3): advance on the wall clock — the old
+           behaviour — so the highlight keeps moving with the voice instead of
+           holding while the file's duration is still Infinity. */
+        contentMs += (now - lastTick) * rate * rateAdjust;
       }
+    } else if(now - lastBoundaryAt > 900){
+      contentMs += (now - lastTick) * rate * rateAdjust;
+    }
+    let i = 0;
+    while(i + 1 < ws.length && starts[i + 1] <= contentMs) i++;
+    if(i !== lastIdx){
+      lastIdx = i;
+      const orig = batch.map[ws[i].s];
+      highlightUnit(speechUnitForOffset(batch.units, orig), orig, false);
     }
     lastTick = now;
     hlFallbackTimer = setTimeout(tick, 120);
@@ -2132,10 +2171,10 @@ function restartSpeech(){
 }
 /* ---------- Google Translate English: real Google network TTS ---------- */
 function isGoogleTranslateVoice(){ return S.settings.voiceURI === "google-translate-en"; }
-let googleAudio = null, googleQueue = [];
+let googleAudio = null, googleQueue = [], googleQueuedEnd = -1, googleQueuedPage = -1;
 function googleStop(){
   if(googleAudio){ const a = googleAudio; googleAudio = null; try{ a.pause(); }catch(e){} try{ a.removeAttribute("src"); }catch(e){} }
-  googleQueue = [];
+  googleQueue = []; googleQueuedEnd = -1;
 }
 /* translate_tts accepts at most 200 characters per request, so long batches
    are split at word boundaries and the pieces play back to back. */
@@ -2157,35 +2196,47 @@ function googleSplitPieces(text, limit = 200){
 function googleTtsUrl(text){
   return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=" + encodeURIComponent(text) + "&tl=en";
 }
-/* Buffer the next batch's first piece while the current one plays so a slow
-   response never leaves a silent gap between sentences. */
+/* Buffer up to three next batches' first piece while the current one plays so
+   a slow response never leaves a silent gap between sentences. Keyed by exact
+   position (page + start): text dedupe dropped repeated paragraphs, and a
+   whitespace batch used to kill the chain so the queue never refilled. */
 function googlePrefetch(batch){
   try{
-    if(!isGoogleTranslateVoice() || googleQueue.length >= 2) return;
+    if(!isGoogleTranslateVoice()) return;
     const page = S.pages[S.pageIdx];
     if(!page) return;
-    let idx = batch ? batch.endIndex + 1 : pos.u;
-    while(idx < page.units.length){
+    if(googleQueuedPage !== S.pageIdx){ googleQueue = []; googleQueuedEnd = -1; googleQueuedPage = S.pageIdx; }
+    let idx = Math.max(batch ? batch.endIndex + 1 : pos.u, googleQueuedEnd + 1);
+    while(googleQueue.length < 3 && idx < page.units.length){
       const nb = buildSpeechBatch(idx);
-      if(!nb || !nb.spoken || !nb.spoken.trim()) return;
-      if(googleQueue.some(q => q.text === nb.spoken)){ idx = nb.endIndex + 1; continue; }
+      if(!nb) break;
+      const start = idx;
+      idx = nb.endIndex + 1;
+      if(!nb.spoken.trim()){ googleQueuedEnd = nb.endIndex; continue; }
       const au = new Audio(googleTtsUrl(googleSplitPieces(nb.spoken)[0]));
       au.preload = "auto";
-      googleQueue.push({text: nb.spoken, au});
-      return;
+      googleQueue.push({page: S.pageIdx, start, text: nb.spoken, au});
+      googleQueuedEnd = nb.endIndex;
     }
   }catch(e){}
 }
-function googleSpeak(batch, g){
+function googleSpeak(batch, g, startIdx){
   const u = batch.units && batch.units[0];
   updateStats();
   const pieces = googleSplitPieces(batch.spoken);
   let firstAu = null;
-  const qi = googleQueue.findIndex(q => q.text === batch.spoken);
+  const qi = googleQueue.findIndex(q => q.page === S.pageIdx && (q.start === startIdx || q.text === batch.spoken));
   if(qi >= 0){ const q = googleQueue[qi]; googleQueue.splice(qi, 1); if(!q.au.error) firstAu = q.au; }
   if(u) highlightUnit(u, u.start || 0);
   utStart = performance.now(); lastBoundaryAt = performance.now();
   if(u) highlightUnit(u, u.start || 0);
+  /* Piece ranges in estimated-content ms: the tick maps each piece's real
+     playback progress into its own span, so the highlight tracks the audio
+     exactly regardless of synthesis time, loads or calibration error. */
+  const ranges = [];
+  let cum = 0;
+  for(const t of pieces){ const end = cum + estSpanMs(t); ranges.push({start: cum, end}); cum = end; }
+  hlAnchor = {batch, ranges, piece: 0, get au(){ return googleAudio; }};
   startHlFallback(batch, g);
   let idx = 0;
   const finish = () => {
@@ -2214,7 +2265,20 @@ function googleSpeak(batch, g){
       restartSpeech();
     };
     if(g === gen && S.playing && !S.paused){
-      au.play().catch(() => { if(googleAudio !== au) return; googleAudio = null; playPiece(); });
+      const attemptPlay = retried => {
+        au.play().catch(() => {
+          if(googleAudio !== au || g !== gen) return;
+          /* A pause/stop raced the pending play(): hold the piece instead of
+             silently skipping its text (the old code advanced to the next). */
+          if(!S.playing || S.paused){ setStatus("Paused"); return; }
+          if(!retried){ setTimeout(() => attemptPlay(true), 300); return; }
+          googleAudio = null;
+          toast("Google Translate voice failed — using the system voice.");
+          S.settings.voiceURI = "auto"; saveSettings(); loadVoices();
+          restartSpeech();
+        });
+      };
+      attemptPlay(false);
     } else setStatus("Paused");
   };
   const playPiece = () => {
@@ -2222,6 +2286,7 @@ function googleSpeak(batch, g){
     if(idx >= pieces.length){ finish(); return; }
     const au = (idx === 0 && firstAu) ? firstAu : new Audio(googleTtsUrl(pieces[idx]));
     idx++;
+    if(hlAnchor) hlAnchor.piece = idx - 1;
     /* Read Aloud's Google engine plays at rate × rateAdjust(1.1) — Google's
        default pace sits ~10% slow, so the setting matches the other voices. */
     au.playbackRate = clamp(S.settings.rate, 0.5, 4) * 1.1;
@@ -2267,7 +2332,7 @@ function speakUnit(retryAttempt){
   highlightUnit(u, fw ? fw.s : u.start);
   updateStats();
   if(!spoken.trim()){ pos.u = batch.endIndex; setTimeout(() => { if(g === gen) nextUnit(); }, 0); return; }
-  if(isGoogleTranslateVoice()){ googleSpeak(batch, g); return; }
+  if(isGoogleTranslateVoice()){ googleSpeak(batch, g, pos.u); return; }
   const ut = new SpeechSynthesisUtterance(spoken);
   applyVoice(ut);
   ut.rate = S.settings.rate;
@@ -2423,7 +2488,10 @@ function pausePlayback(){
 function resumePlayback(){
   S.paused = false;
   if(cinemaAuto && !document.body.classList.contains("cinema")) cinemaOn();
-  if(googleAudio){ try{ googleAudio.play(); }catch(e){} updateTransport(); setStatus("Reading"); return; }
+  if(googleAudio){
+    try{ googleAudio.play().catch(() => { if(S.playing && !S.paused) restartSpeech(); }); }catch(e){ if(S.playing && !S.paused) restartSpeech(); }
+    updateTransport(); setStatus("Reading"); return;
+  }
   if(S.needRespeak){ S.needRespeak = false; restartSpeech(); }
   else {
     try{ speechSynthesis.resume(); }catch(e){}
